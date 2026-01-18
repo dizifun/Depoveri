@@ -1,44 +1,58 @@
-name: YabanciDiziBox Otomasyonu
+name: YabanciDiziBot Fix
 
 on:
   schedule:
-    # Her gün UTC saatiyle 04:00'da (Türkiye saatiyle sabah 07:00 civarı) çalışır
     - cron: '0 4 * * *'
-  workflow_dispatch: # Manuel çalıştırma butonu ekler
+  workflow_dispatch:
 
 permissions:
-  contents: write # Dosya kaydetmek için yazma izni
+  contents: write
 
 jobs:
   scrape_job:
     runs-on: ubuntu-latest
+    timeout-minutes: 340 # 6 saate yakın süre
 
     steps:
-      - name: Depoyu Çek (Checkout)
+      - name: Repoyu Çek
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tüm geçmişi çek (Hata önler)
 
-      - name: Python Kurulumu
+      - name: Python Kur
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # --- KÜTÜPHANELER BURADA YÜKLENİYOR ---
-      # requirements.txt dosyasına gerek yok, pip install direkt burada çalışır.
-      - name: Gerekli Kütüphaneleri Yükle
+      - name: Kütüphaneleri Yükle
         run: |
           python -m pip install --upgrade pip
           pip install cloudscraper requests
 
-      - name: Botu Çalıştır (yabancıdizibox.py)
-        run: python yabancıdizibox.py
+      # Hata: "Resim 1"deki bozuk dosyaları temizleyelim
+      - name: Eski Klasörü Temizle
+        run: rm -rf yabancidizibox/
+        continue-on-error: true
 
-      - name: Dosyaları Commit ve Push Yap
+      - name: Botu Çalıştır
+        run: python main.py
+
+      - name: Git Senkronizasyon ve Push (Hata Çözümü)
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
           
-          # "yabancidizibox" klasörünü ve içindekileri ekle
+          # Tüm yeni dosyaları ekle
           git add yabancidizibox/
           
-          # Eğer değişiklik varsa commit at ve gönder, yoksa hata verme
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Liste güncellendi: $(date)" && git push)
+          # Değişiklik varsa commit et
+          if git diff --staged --quiet; then
+            echo "Değişiklik yok."
+          else
+            git commit -m "Otomatik Güncelleme: $(date)"
+            
+            # --- KRİTİK DÜZELTME BURADA ---
+            # Önce GitHub'daki değişiklikleri çek, sonra gönder
+            git pull --rebase origin main
+            git push origin main
+          fi
