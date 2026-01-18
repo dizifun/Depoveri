@@ -9,13 +9,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # BU AYAR ÇOK ÖNEMLİ: Yazma izni verir.
+    # 1. ADIM: İzinleri Ayarla
     permissions:
       contents: write
 
     steps:
-      - name: Repoyu Çek
+      - name: Repoyu Çek (Checkout)
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tüm geçmişi çek ki çakışma olmasın
 
       - name: Python Kurulumu
         uses: actions/setup-python@v4
@@ -30,10 +32,21 @@ jobs:
       - name: Scraper'ı Çalıştır
         run: python showtv_scraper.py
 
-      - name: Dosyaları Yükle (Push)
+      - name: Dosyaları Git'e Yükle (Commit & Push)
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
+          
+          # Tüm yeni dosyaları ekle
           git add showtv/
-          git commit -m "Show TV Güncellemesi: Yeni Bölümler ve Programlar" || echo "Değişiklik yok"
-          git push
+          
+          # Değişiklik var mı kontrol et
+          if git diff --staged --quiet; then
+            echo "Değişiklik yok, işlem sonlandırılıyor."
+          else
+            git commit -m "Show TV Listeleri Güncellendi: $(date)"
+            
+            # ÇAKIŞMAYI ÖNLEMEK İÇİN ÖNCE ÇEK (PULL), SONRA GÖNDER (PUSH)
+            git pull --rebase origin main
+            git push origin main
+          fi
