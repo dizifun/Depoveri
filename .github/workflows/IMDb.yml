@@ -1,40 +1,48 @@
-name: Full Archive Scraper (10k)
+name: Test Scraper (Link Kontrollü ve Hızlı)
 
 on:
   workflow_dispatch: # Manuel buton
   schedule:
-    - cron: '0 2 * * *' # Her gece 02:00'de otomatik çalışır
+    - cron: '0 2 * * *' # Otomatik gece 02:00'de çalışır
 
 jobs:
   scrape-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 350 # İşlem uzun sürerse kesilmesin (6 Saat)
     permissions:
-      contents: write # Dosya kaydetme izni
+      contents: write # Yazma izni şart
 
     steps:
       - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tüm geçmişi çek ki hata vermesin
 
       - name: Python Kurulumu
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # BURASI İSTEDİĞİN KISIM: Kütüphaneyi direkt burada kuruyoruz.
-      # requirements.txt dosyasına gerek kalmadı.
-      - name: Kütüphaneyi Yükle (requests)
+      - name: Kütüphaneleri Yükle
         run: pip install requests
 
       - name: Scripti Çalıştır
-        run: python imbd.py
+        run: python main.py
 
-      - name: Sonuçları Kaydet ve Yükle
+      - name: Sonuçları Kaydet ve Yükle (Fixli Versiyon)
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
+          
+          # Dosyaları ekle
           git add output/
-          git commit -m "Film ve Dizi arşivi güncellendi" || echo "Değişiklik yok"
-          # Çok fazla dosya olacağı için git buffer ayarını artırıyoruz
-          git config --global http.postBuffer 524288000
-          git push
+          
+          # Commit at (Değişiklik yoksa hata verme)
+          git commit -m "Arşiv güncellendi" || echo "Değişiklik yok"
+          
+          # --- HATA ÇÖZÜCÜ KISIM ---
+          # Önce sunucudaki değişiklikleri çekip birleştiriyoruz (Rebase)
+          # --strategy-option=theirs: Çakışma olursa "Botun yaptığı dosyaları" kabul et diyoruz.
+          git pull origin main --rebase --strategy-option=theirs
+          
+          # Şimdi gönül rahatlığıyla yükleyebiliriz
+          git push origin main
