@@ -16,9 +16,14 @@ if not os.path.exists(OUTPUT_FOLDER):
 
 site_base_url = "https://www.kanald.com.tr"
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+}
+
 def get_stream_url(url):
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.content, "html.parser")
         container = soup.find("div", {"class": "player-container"})
         
@@ -27,7 +32,7 @@ def get_stream_url(url):
             api_url = "https://www.kanald.com.tr/actions/media"
             params = {"id": media_id, "p": "1", "pc": "1", "isAMP": "false"}
             
-            r_api = requests.get(api_url, params=params)
+            r_api = requests.get(api_url, params=params, headers=HEADERS)
             data = r_api.json()["data"]
             
             if data["media"]["link"]["type"] == "video/dailymotion":
@@ -41,63 +46,63 @@ def get_stream_url(url):
     except:
         return ""
 
-def get_arsiv_page(url):
+def get_movies_page(url):
     all_items = []
+    print(f"Sinemalar taranıyor: {url}")
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.content, "html.parser")
         
-        def parse_items(page_soup):
-            lst = []
-            listing = page_soup.find("section", {"class": "listing-holder"})
-            if listing:
-                for item in listing.find_all("div", {"class": "item"}):
-                    a_tag = item.find("a")
-                    img_tag = item.find("img")
-                    title_tag = item.find("h3", {"class": "title"})
-                    
-                    if a_tag and img_tag and title_tag:
-                        i_url = site_base_url + a_tag.get("href")
-                        i_img = img_tag.get("data-src") or img_tag.get("src")
-                        i_name = title_tag.get_text().strip()
-                        lst.append({"name": i_name, "img": i_img, "url": i_url})
-            return lst
+        # Sinema sayfasındaki listeyi bul
+        items = soup.find_all("div", {"class": "item"})
+        print(f"Bulunan film kartı sayısı: {len(items)}")
 
-        pagination = soup.find("ul", {"class": "pagination"})
-        if pagination:
-            for page in pagination.find_all("li"):
-                a = page.find("a")
-                if a:
-                    sub_r = requests.get(r.url + a.get("href"), timeout=10)
-                    all_items += parse_items(BeautifulSoup(sub_r.content, "html.parser"))
-        else:
-            all_items = parse_items(soup)
-    except:
+        for item in items:
+            a_tag = item.find("a")
+            img_tag = item.find("img")
+            title_tag = item.find("h3", {"class": "title"})
+            
+            if a_tag and title_tag:
+                i_url = site_base_url + a_tag.get("href")
+                i_name = title_tag.get_text().strip()
+                i_img = ""
+                if img_tag:
+                    i_img = img_tag.get("data-src") or img_tag.get("src") or ""
+                
+                # Film linki olup olmadığını basitçe kontrol et
+                # (URL içinde genelde 'sinemalar' geçer ama bazen direkt film adı olabilir)
+                all_items.append({"name": i_name, "img": i_img, "url": i_url})
+
+    except Exception as e:
+        print(f"Hata: {e}")
         pass
-    return all_items
+        
+    unique_items = {v['url']: v for v in all_items}.values()
+    return list(unique_items)
 
 def main():
-    url = "https://www.kanald.com.tr/evde-sinema"
+    # YENİ LİNK
+    url = "https://www.kanald.com.tr/sinemalar"
     movies = []
-    movie_list = get_arsiv_page(url)
+    movie_list = get_movies_page(url)
     
-    print(f"Toplam {len(movie_list)} film bulundu.")
-    
-    for movie in tqdm(movie_list, desc="Evde Sinema"):
+    for movie in tqdm(movie_list, desc="Sinemalar"):
         stream_url = get_stream_url(movie["url"])
         if stream_url:
             movie["stream_url"] = stream_url
             movies.append(movie)
 
-    data = [{"name": "Evde Sinema", "episodes": movies}]
-    
-    # JSON Kaydet
-    json_path = os.path.join(OUTPUT_FOLDER, "evde-sinema.json")
-    with open(json_path, "w+", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    if movies:
+        data = [{"name": "Sinemalar", "episodes": movies}]
         
-    # M3U Kaydet
-    create_single_m3u(OUTPUT_FOLDER, data, "evde-sinema")
+        json_path = os.path.join(OUTPUT_FOLDER, "kanald-sinemalar.json")
+        with open(json_path, "w+", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+            
+        create_single_m3u(OUTPUT_FOLDER, data, "kanald-sinemalar")
+        print(f"İşlem tamam! {len(movies)} film eklendi.")
+    else:
+        print("Çalışan film bulunamadı.")
 
 if __name__=="__main__": 
     main()
