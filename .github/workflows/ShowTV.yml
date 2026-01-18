@@ -1,0 +1,36 @@
+name: ShowTV Scraper Güncelleme
+
+on:
+  schedule:
+    # Her gün saat 06:00'da çalışır (UTC saatiyle, TR saati ile 09:00)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Manuel tetikleme butonu ekler
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repoyu Çek (Checkout)
+        uses: actions/checkout@v3
+
+      - name: Python Kurulumu
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Gerekli Kütüphaneleri Yükle
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 tqdm
+
+      - name: Scraper'ı Çalıştır
+        run: python showtv_scraper.py
+
+      - name: Değişiklikleri Kaydet (Commit & Push)
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          git add showtv/
+          git commit -m "Otomatik Güncelleme: Show TV Listeleri" || echo "Değişiklik yok"
+          git push
