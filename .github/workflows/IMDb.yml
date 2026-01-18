@@ -26,7 +26,7 @@ jobs:
         run: pip install requests
 
       - name: Scripti Çalıştır
-        run: python main.py
+        run: python yabancıdizibox.py
 
       - name: Sonuçları Kaydet ve Yükle (Fixli Versiyon)
         run: |
