@@ -20,18 +20,17 @@ DIRS = {
 session = requests.Session()
 session.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Referer": BASE_URL,
-    "Origin": BASE_URL
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "X-Requested-With": "XMLHttpRequest",
+    "Origin": BASE_URL,
+    "Referer": BASE_URL
 })
 
 def run_command(command):
-    """Komutları çalıştırıp çıktısını gösterir"""
     try:
         result = subprocess.run(command, shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return result.stdout.strip() + result.stderr.strip()
-    except Exception as e:
-        return str(e)
+        return result.stdout.strip()
+    except: return ""
 
 def get_real_stream_url(episode_url):
     if not episode_url: return ""
@@ -39,67 +38,87 @@ def get_real_stream_url(episode_url):
     try:
         r = session.get(full_url, timeout=10)
         match = re.search(r"source:\s*['\"](https:\/\/[^'\"]*?\.m3u8[^'\"]*?)['\"]", r.text)
-        url = match.group(1) if match else ""
-        if url:
-            # Ekrana linki bulduğunu bas
-            # print(f"      🔗 Link Bulundu: {url[:40]}...")
-            return url
-    except: pass
-    return ""
+        return match.group(1) if match else ""
+    except: return ""
 
-def get_episodes(program_id, show_name):
+def get_episodes(program_id, show_name, show_url):
+    """Bölümleri çeker (Önce Type 1 [Bölüm], boşsa Type 2 [Fragman] dener)"""
     url = f"{BASE_URL}/ajax/videos"
-    episode_list = []
-    payload = {'filter': 'season', 'season': 1, 'program_id': program_id, 'page': 0, 'type': '2', 'count': '50', 'orderBy': 'id', 'sorting': 'asc'}
-
+    
+    # Referer'ı dizinin kendi sayfası yap (ÖNEMLİ!)
+    session.headers.update({"Referer": show_url})
+    
+    # Token Tazelemek (Gerekirse)
     if 'X-CSRF-TOKEN' not in session.headers:
         try:
-            r = session.get(BASE_URL)
+            r = session.get(show_url)
             meta = re.search(r'name="csrf-token"\s+content="([^"]+)"', r.text)
             if meta: session.headers['X-CSRF-TOKEN'] = meta.group(1)
         except: pass
 
-    print(f"   🔎 '{show_name}' (ID: {program_id}) bölümleri aranıyor...")
-
-    while payload['season'] < 15:
-        try:
-            r = session.post(url, data=payload, timeout=10)
-            try: resp = r.json()
-            except: break 
-
-            html = resp.get('data', '')
-            if not html:
-                if payload['page'] == 0: payload['season'] += 1; continue
-                else: payload['season'] += 1; payload['page'] = 0; continue
-
-            soup = BeautifulSoup(html, 'html.parser')
-            items = soup.find_all("div", {"class": "list-item"})
-            if not items: payload['season'] += 1; payload['page'] = 0; continue
-
-            for item in items:
-                try:
-                    name_tag = item.find("strong")
-                    ep_name = name_tag.text.strip() if name_tag else "Bölüm"
-                    full_name = f"{show_name} - {ep_name}"
-                    
-                    link_tag = item.find("a")
-                    page_url = link_tag['href'] if link_tag else ""
-                    
-                    img_tag = item.find("img")
-                    img_url = img_tag['src'] if img_tag else ""
-                    
-                    stream_url = get_real_stream_url(page_url)
-                    if not stream_url: 
-                        stream_url = BASE_URL + page_url if not page_url.startswith("http") else page_url
-
-                    episode_list.append({"name": full_name, "img": img_url, "url": page_url, "stream_url": stream_url})
-                except: continue
-
-            if len(items) < int(payload['count']): payload['season'] += 1; payload['page'] = 0
-            else: payload['page'] += 1
-        except: break
+    episode_list = []
     
-    print(f"   ✅ Toplam {len(episode_list)} bölüm bulundu.")
+    # Önce Type 1 (Full Bölüm) dene, olmazsa Type 2 (Video) dene
+    for type_code in [1, 2]:
+        if len(episode_list) > 0: break # Zaten bulduysak diğer tipe bakma
+
+        # print(f"   Searching Type {type_code}...") 
+        payload = {'filter': 'season', 'season': 1, 'program_id': program_id, 'page': 0, 'type': type_code, 'count': 50, 'orderBy': 'id', 'sorting': 'asc'}
+        
+        # Sezon Döngüsü
+        while payload['season'] < 15:
+            try:
+                r = session.post(url, data=payload, timeout=10)
+                try: resp = r.json()
+                except: break 
+
+                html = resp.get('data', '')
+                if not html:
+                    # Bu sezonda veri yok, sonrakine geç
+                    if payload['page'] == 0: 
+                        payload['season'] += 1
+                        continue
+                    else: 
+                        # Sayfa bitmiş
+                        payload['season'] += 1
+                        payload['page'] = 0
+                        continue
+
+                soup = BeautifulSoup(html, 'html.parser')
+                items = soup.find_all("div", {"class": "list-item"})
+                
+                if not items:
+                    payload['season'] += 1
+                    payload['page'] = 0
+                    continue
+
+                for item in items:
+                    try:
+                        name_tag = item.find("strong")
+                        ep_name = name_tag.text.strip() if name_tag else "Bölüm"
+                        full_name = f"{show_name} - {ep_name}"
+                        
+                        link_tag = item.find("a")
+                        page_url = link_tag['href'] if link_tag else ""
+                        
+                        img_tag = item.find("img")
+                        img_url = img_tag['src'] if img_tag else ""
+                        
+                        stream_url = get_real_stream_url(page_url)
+                        if not stream_url: 
+                            stream_url = BASE_URL + page_url if not page_url.startswith("http") else page_url
+
+                        episode_list.append({"name": full_name, "img": img_url, "url": page_url, "stream_url": stream_url})
+                    except: continue
+
+                # Sayfalama
+                if len(items) < int(payload['count']): 
+                    payload['season'] += 1
+                    payload['page'] = 0
+                else: 
+                    payload['page'] += 1
+            except: break
+            
     return episode_list
 
 def extract_id_from_img(img_url):
@@ -109,7 +128,7 @@ def extract_id_from_img(img_url):
     return None
 
 def collect_items_from_page(url):
-    print(f"🌍 Sayfa Taranıyor: {url}")
+    print(f"🌍 Taranıyor: {url}")
     found = []
     seen_ids = set()
     try:
@@ -127,12 +146,10 @@ def collect_items_from_page(url):
             if not pid or pid in seen_ids: continue
             title = img.get('alt') or link.get('title') or link.text.strip()
             if not title: continue
+            
+            full_link = BASE_URL + href if not href.startswith("http") else href
             seen_ids.add(pid)
-            found.append({"id": pid, "name": title, "img": img_src, "url": BASE_URL + href if not href.startswith("http") else href})
-            
-            # Bulunan içeriği anlık yazdır
-            # print(f"   -> Bulundu: {title} (ID: {pid})")
-            
+            found.append({"id": pid, "name": title, "img": img_src, "url": full_link})
     except Exception as e: print(f"❌ Hata: {e}")
     return found
 
@@ -147,20 +164,21 @@ def main():
 
     for t in targets:
         items = collect_items_from_page(t['url'])
-        print(f"📌 {len(items)} içerik için detaylar çekiliyor...")
+        print(f"📌 {len(items)} içerik bulundu. Bölümler taranıyor...")
         
+        # Hepsini tarayıp boşa zaman harcamaması için ilk 3'ü test et, çalışıyorsa devam et
+        # (Gerçek kullanımda tümünü taraması için tqdm(items) kalmalı)
         for item in tqdm(items):
-            episodes = get_episodes(item['id'], item['name'])
+            episodes = get_episodes(item['id'], item['name'], item['url'])
+            
             if episodes:
                 show_data = {"id": item['id'], "name": item['name'], "img": item['img'], "episodes": episodes}
                 slug = re.sub(r'[^a-z0-9-]', '', item['name'].lower().replace(" ", "-").replace("ç","c").replace("ğ","g").replace("ı","i").replace("ö","o").replace("ş","s").replace("ü","u"))
                 target_dir = DIRS["series"] if t['type'] == "series" else DIRS["programs"]
                 
-                # JSON Kaydet
-                file_path = os.path.join(target_dir, f"{slug}.json")
-                with open(file_path, "w", encoding="utf-8") as f: json.dump(show_data, f, ensure_ascii=False, indent=4)
+                with open(os.path.join(target_dir, f"{slug}.json"), "w", encoding="utf-8") as f: 
+                    json.dump(show_data, f, ensure_ascii=False, indent=4)
                 
-                # M3U Kaydet
                 try:
                     with open(os.path.join(target_dir, f"{slug}.m3u"), "w", encoding="utf-8") as f:
                         f.write("#EXTM3U\n")
@@ -169,7 +187,8 @@ def main():
                 
                 all_data[t['type']].append(show_data)
 
-    print("\n📦 Ana Toplu Dosyalar Oluşturuluyor...")
+    print("\n📦 Toplu Dosyalar Oluşturuluyor...")
+    # Ana JSON ve M3U dosyaları
     with open(os.path.join(ROOT_DIR, "now-diziler.json"), "w", encoding="utf-8") as f: json.dump(all_data["series"], f, ensure_ascii=False, indent=4)
     with open(os.path.join(ROOT_DIR, "now-diziler.m3u"), "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
@@ -182,38 +201,22 @@ def main():
         for show in all_data["programs"]:
              for ep in show.get("episodes", []): f.write(f'#EXTINF:-1 tvg-logo="{ep["img"]}" group-title="{show["name"]}",{ep["name"]}\n{ep["stream_url"]}\n')
 
-    # --- AGRESİF GITHUB GÖNDERİMİ ---
-    print("\n🚀 GITHUB YÜKLEME İŞLEMİ BAŞLIYOR...")
+    # --- ZORLA GITHUB YÜKLEME ---
+    print("\n🚀 GitHub Yükleme Başlatılıyor...")
     
-    # 1. Ne var ne yok ekle (Hepsini kapsar)
-    print("1. Dosyalar Git sırasına alınıyor...")
+    # Git status temizleme ve ekleme
     run_command("git add --all")
+    run_command("git add now/*") # now klasörünü zorla
+
+    # Commit ve Push
+    tarih = datetime.now().strftime("%d-%m %H:%M")
     
-    # 2. Özel olarak 'now' klasörünü zorla ekle
-    print("2. 'now' klasörü zorlanıyor...")
-    run_command("git add now/*")
-
-    # 3. Durumu göster (Debug için)
-    print("3. Git Durumu (Status):")
-    status_output = run_command("git status")
-    print(status_output)
-
-    if "nothing to commit" in status_output:
-        print("⚠️ HATA: Git değişiklik görmedi! Dosyalar güncellenmemiş olabilir.")
-    else:
-        # 4. Commit ve Push
-        tarih = datetime.now().strftime("%Y-%m-%d %H:%M")
-        print(f"4. Commitleniyor: {tarih}")
-        run_command(f'git commit -m "Guncelleme: {tarih}"')
-        
-        print("5. GitHub'a Push ediliyor...")
-        push_out = run_command("git push")
-        print(push_out)
-        
-        if "Everything up-to-date" not in push_out:
-            print("✅✅✅ İŞLEM TAMAM! GitHub'ı kontrol et.")
-        else:
-            print("ℹ️ GitHub zaten güncel.")
+    # Değişiklik var mı kontrolü yapmadan direkt basıyoruz, varsa gider.
+    run_command(f'git commit -m "Icerik Guncelleme {tarih}"')
+    
+    push_out = run_command("git push")
+    print(f"📡 Push Sonucu:\n{push_out}")
+    print("✅ Bitti.")
 
 if __name__ == "__main__":
     main()
