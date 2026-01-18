@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-import re # Dosya isimlerini düzeltmek için
+import re
 import time
 
 # --- AYARLAR ---
@@ -10,26 +10,21 @@ BASE_URL = "https://api.themoviedb.org/3"
 VIDMODY_BASE = "https://vidmody.com/vs"
 IMG_URL = "https://image.tmdb.org/t/p/w500"
 
-# 10.000 içerik için (500 sayfa x 20 = 10.000)
-MAX_PAGES = 500
+# DENEME MODU: 100 içerik için 5 sayfa yeterli (5 x 20 = 100)
+MAX_PAGES = 5
 
 # Klasörleri oluştur
 os.makedirs("output/filmler", exist_ok=True)
 os.makedirs("output/diziler", exist_ok=True)
 
 def sanitize_filename(name):
-    """
-    Dosya ismindeki yasaklı karakterleri temizler.
-    Örn: 'Face/Off' -> 'FaceOff'
-    """
-    # Windows/Linux dosya sisteminde yasaklı karakterleri siler
+    """Dosya isimlerindeki yasaklı karakterleri temizler."""
     return re.sub(r'[\\/*?:"<>|]', "", name).strip()
 
 def get_imdb_id(tmdb_id, media_type):
-    """TMDB ID'den IMDb ID'yi bulur"""
+    """TMDB ID'den IMDb ID'yi bulur."""
     try:
         url = f"{BASE_URL}/{media_type}/{tmdb_id}/external_ids?api_key={API_KEY}"
-        # Hata almamak için kısa bir bekleme (opsiyonel)
         r = requests.get(url, timeout=10)
         if r.status_code == 200:
             return r.json().get("imdb_id")
@@ -38,7 +33,7 @@ def get_imdb_id(tmdb_id, media_type):
     return None
 
 def save_m3u(filename, content_list):
-    """M3U listesi oluşturur"""
+    """M3U listesi oluşturur."""
     with open(filename, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
         for item in content_list:
@@ -46,7 +41,7 @@ def save_m3u(filename, content_list):
             f.write(f'{item["url"]}\n')
 
 def process_movies():
-    print("--- FİLMLER BAŞLIYOR (Hedef: 10.000) ---")
+    print(f"--- FİLMLER BAŞLIYOR (Hedef: {MAX_PAGES * 20} Film) ---")
     movies_data = []
     m3u_entries = []
 
@@ -63,6 +58,7 @@ def process_movies():
                     link = f"{VIDMODY_BASE}/{imdb_id}"
                     poster = f"{IMG_URL}{item['poster_path']}" if item.get('poster_path') else ""
                     
+                    # JSON Objesi
                     movie_obj = {
                         "id": imdb_id,
                         "title": title,
@@ -71,6 +67,7 @@ def process_movies():
                     }
                     movies_data.append(movie_obj)
                     
+                    # M3U Girdisi
                     m3u_entries.append({
                         "group": "Filmler",
                         "logo": poster,
@@ -80,7 +77,7 @@ def process_movies():
         except Exception as e:
             print(f"Hata (Film Sayfa {page}): {e}")
 
-    # Film Çıktıları
+    # Toplu Film Çıktıları
     with open("output/movies_all.json", "w", encoding="utf-8") as f:
         json.dump(movies_data, f, ensure_ascii=False, indent=4)
     
@@ -89,7 +86,7 @@ def process_movies():
     return movies_data, m3u_entries
 
 def process_series():
-    print("--- DİZİLER BAŞLIYOR (İsim Bazlı) ---")
+    print(f"--- DİZİLER BAŞLIYOR (Hedef: {MAX_PAGES * 20} Dizi) ---")
     series_data_all = []
     m3u_entries_all = []
 
@@ -105,11 +102,10 @@ def process_series():
                 
                 if imdb_id:
                     raw_name = item['name']
-                    # İsimdeki yasaklı karakterleri temizle
-                    file_name = sanitize_filename(raw_name) 
+                    file_name = sanitize_filename(raw_name) # İsim temizle
                     poster = f"{IMG_URL}{item['poster_path']}" if item.get('poster_path') else ""
                     
-                    # Dizi detaylarını (sezonlar) çek
+                    # Dizi Detaylarını Çek
                     details_url = f"{BASE_URL}/tv/{tmdb_id}?api_key={API_KEY}"
                     details = requests.get(details_url).json()
                     
@@ -122,12 +118,12 @@ def process_series():
                     
                     series_m3u_local = []
 
-                    # Sezonları dön
+                    # Sezonları Dön
                     for season in details.get('seasons', []):
                         s_num = season['season_number']
                         ep_count = season['episode_count']
                         
-                        if s_num > 0: # 0. sezonu atla
+                        if s_num > 0: # 0. sezon hariç
                             for ep in range(1, ep_count + 1):
                                 # s1/e07 formatı
                                 link = f"{VIDMODY_BASE}/{imdb_id}/s{s_num}/e{ep:02d}"
@@ -149,12 +145,12 @@ def process_series():
                                 series_m3u_local.append(m3u_entry)
                                 m3u_entries_all.append(m3u_entry)
 
-                    # --- DİZİ İÇİN ÖZEL DOSYALAR (İSMİYLE) ---
-                    # Örn: output/diziler/Breaking Bad.json
+                    # --- DİZİYE ÖZEL DOSYALAR (İsimle) ---
+                    # JSON: output/diziler/Breaking Bad.json
                     with open(f"output/diziler/{file_name}.json", "w", encoding="utf-8") as f:
                         json.dump(series_obj, f, ensure_ascii=False, indent=4)
                     
-                    # Örn: output/diziler/Breaking Bad.m3u
+                    # M3U: output/diziler/Breaking Bad.m3u
                     save_m3u(f"output/diziler/{file_name}.m3u", series_m3u_local)
 
                     series_data_all.append(series_obj)
@@ -162,7 +158,7 @@ def process_series():
         except Exception as e:
             print(f"Hata (Dizi Sayfa {page}): {e}")
 
-    # Toplu Dizi Dosyaları
+    # Toplu Dizi Çıktıları
     with open("output/series_all.json", "w", encoding="utf-8") as f:
         json.dump(series_data_all, f, ensure_ascii=False, indent=4)
         
@@ -174,14 +170,14 @@ if __name__ == "__main__":
     all_movies, movies_m3u = process_movies()
     all_series, series_m3u = process_series()
     
-    print("--- GENEL TOPLU DOSYALAR YAZILIYOR ---")
+    print("--- GENEL DOSYALAR OLUŞTURULUYOR ---")
     
-    # Her şeyin olduğu tek JSON
+    # 1. Her şey Tek JSON
     full_db = {"movies": all_movies, "series": all_series}
     with open("output/everything.json", "w", encoding="utf-8") as f:
         json.dump(full_db, f, ensure_ascii=False, indent=4)
         
-    # Her şeyin olduğu tek M3U
+    # 2. Her şey Tek M3U
     save_m3u("output/everything.m3u", movies_m3u + series_m3u)
     
-    print("BİTTİ.")
+    print("TAMAMLANDI! 100 Film ve 100 Dizi işlendi.")
