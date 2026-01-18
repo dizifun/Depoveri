@@ -4,57 +4,62 @@ on:
   schedule:
     # Her gün sabah 06:00'da (Türkiye saatiyle yaklaşık 09:00) çalışır
     - cron: '0 6 * * *'
-  workflow_dispatch: # Manuel çalıştırma butonu ekler
+  workflow_dispatch: # Manuel çalıştırma butonu
 
 permissions:
-  contents: write # Dosya kaydetmek için izin
+  contents: write
 
 jobs:
   scrape_and_archive:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Adım: Repoyu sanal makineye çek
-      - name: 📥 Repoyu Kontrol Et (Checkout)
+      - name: 📥 Repoyu Çek (Checkout)
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tüm geçmişi çek ki çakışma olmasın
 
-      # 2. Adım: Python Ortamını Kur
       - name: 🐍 Python Kurulumu
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. Adım: Gerekli Kütüphaneleri Yükle
-      # Kodun çalışması için gereken requests, bs4 ve tqdm burada yükleniyor
       - name: 📦 Kütüphaneleri Yükle
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 tqdm
 
-      # 4. Adım: Klasör Kontrolü (Hata almamak için)
+      # Klasörün varlığından emin oluyoruz
       - name: 📂 Klasör Yapısını Doğrula
         run: mkdir -p KanalD_Arsiv
 
-      # 5. Adım: Ana Python Scriptini Çalıştır
       - name: 🚀 Kanal D Tarayıcıyı Çalıştır
+        # Python dosya adının repo'daki adla AYNI olduğundan emin ol!
+        # Eğer dosya adın farklıysa burayı düzelt.
         run: |
-          # Uzun sürebileceği için timeout yok, script bitene kadar bekler
           python kanald_full_scraper.py
 
-      # 6. Adım: Oluşan Dosyaları Kontrol Et (Loglarda görmek için)
-      - name: 🔍 Dosyaları Listele
+      - name: 🔍 Oluşan Dosyaları Listele (Kontrol)
         run: ls -R KanalD_Arsiv/
 
-      # 7. Adım: Değişiklikleri Git'e Kaydet ve Yükle
-      - name: 💾 Sonuçları Kaydet (Commit & Push)
+      - name: 💾 Sonuçları Kaydet ve Yükle (Fix: Rebase)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Sadece oluşturulan arşiv klasörünü ekle
+          # Oluşan klasörü ekle
           git add KanalD_Arsiv
           
-          # Eğer değişiklik varsa commit et, yoksa hata verme
-          git commit -m "Kanal D Güncellemesi: Yeni Bölümler ve Linkler" || echo "⚠️ Değişiklik bulunamadı."
-          
-          git push
+          # Değişiklik var mı kontrol et
+          if git diff --staged --quiet; then
+            echo "⚠️ Değişiklik yok, commit atlanıyor."
+          else
+            git commit -m "Kanal D Güncellemesi: Otomatik Arşiv"
+            
+            # --- KRİTİK DÜZELTME BURADA ---
+            # Repodaki son değişiklikleri çek ve üzerine yaz (Rebase)
+            git pull --rebase origin main
+            
+            # Şimdi yükle
+            git push origin main
+          fi
