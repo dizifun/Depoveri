@@ -2,9 +2,9 @@ name: Kanal D Full Arşiv Güncelleyici
 
 on:
   schedule:
-    # Her gün sabah 06:00'da (Türkiye saatiyle yaklaşık 09:00) çalışır
+    # Runs every day at 06:00 UTC (09:00 TRT)
     - cron: '0 6 * * *'
-  workflow_dispatch: # Manuel çalıştırma butonu
+  workflow_dispatch: # Allows manual triggering
 
 permissions:
   contents: write
@@ -14,58 +14,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. ADIM: Repoyu Tam Geçmişiyle Çek (fetch-depth: 0 çok önemli)
-      - name: 📥 Repoyu Çek (Checkout)
+      # Step 1: Checkout the repository with full history
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0 
 
-      # 2. ADIM: Python Kurulumu
-      - name: 🐍 Python Kurulumu
+      # Step 2: Set up Python environment
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. ADIM: Kütüphaneleri Yükle
-      - name: 📦 Kütüphaneleri Yükle
+      # Step 3: Install dependencies
+      - name: 📦 Install Libraries
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 tqdm
 
-      # 4. ADIM: Klasör Kontrolü
-      - name: 📂 Klasör Yapısını Doğrula
+      # Step 4: Ensure the output directory exists
+      - name: 📂 Verify Directory
         run: mkdir -p KanalD_Arsiv
 
-      # 5. ADIM: Scripti Çalıştır
-      - name: 🚀 Kanal D Tarayıcıyı Çalıştır
+      # Step 5: Run the main scraper script
+      # IMPORTANT: Ensure this filename matches your uploaded Python file exactly!
+      - name: 🚀 Run Scraper
         run: |
-          # Dosya adının repodakiyle BİREBİR aynı olduğundan emin ol
           python kanald_full_scraper.py
 
-      # 6. ADIM: Dosyaları Listele (Kontrol Amaçlı)
-      - name: 🔍 Oluşan Dosyaları Listele
+      # Step 6: List files to verify output (for debugging logs)
+      - name: 🔍 List Generated Files
         run: ls -R KanalD_Arsiv/
 
-      # 7. ADIM: Hata Veren "Push" Kısmının Düzeltilmiş Hali
-      - name: 💾 Sonuçları Kaydet ve Yükle (Fix: Rebase)
+      # Step 7: Commit and Push changes with Rebase to fix conflicts
+      - name: 💾 Commit & Push Results
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Arşiv klasörünü ekle
+          # Add the output directory
           git add KanalD_Arsiv
           
-          # Değişiklik var mı kontrol et
+          # Check if there are changes to commit
           if git diff --staged --quiet; then
-            echo "⚠️ Değişiklik yok, commit atlanıyor."
+            echo "⚠️ No changes detected. Skipping commit."
           else
             git commit -m "Kanal D Güncellemesi: Otomatik Arşiv"
             
-            # --- KRİTİK DÜZELTME BURADA ---
-            # GitHub'daki son değişiklikleri çekip bizimkilerin altına koyar (Rebase)
-            # Bu satır "fetch first" hatasını çözer.
+            # --- CRITICAL FIX: Pull latest changes to avoid 'fetch first' error ---
             git pull --rebase origin main
             
-            # Şimdi güvenle yükle
+            # Push changes to the main branch
             git push origin main
           fi
