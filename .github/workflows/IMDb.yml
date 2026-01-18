@@ -1,0 +1,40 @@
+name: Full Archive Scraper (10k)
+
+on:
+  workflow_dispatch: # Manuel buton
+  schedule:
+    - cron: '0 2 * * *' # Her gece 02:00'de otomatik çalışır
+
+jobs:
+  scrape-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350 # İşlem uzun sürerse kesilmesin (6 Saat)
+    permissions:
+      contents: write # Dosya kaydetme izni
+
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v3
+
+      - name: Python Kurulumu
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # BURASI İSTEDİĞİN KISIM: Kütüphaneyi direkt burada kuruyoruz.
+      # requirements.txt dosyasına gerek kalmadı.
+      - name: Kütüphaneyi Yükle (requests)
+        run: pip install requests
+
+      - name: Scripti Çalıştır
+        run: python imbd.py
+
+      - name: Sonuçları Kaydet ve Yükle
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'action@github.com'
+          git add output/
+          git commit -m "Film ve Dizi arşivi güncellendi" || echo "Değişiklik yok"
+          # Çok fazla dosya olacağı için git buffer ayarını artırıyoruz
+          git config --global http.postBuffer 524288000
+          git push
