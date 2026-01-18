@@ -4,6 +4,11 @@
     "url": "https://www.showtv.com.tr/dizi/tanitim/kara/2935",
     "episodes": [
         {
+            "name": "Kara - Kara Sezon 1 Bolum 1 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kara.jpg?v=1707115133",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2023/12/21/D2D5A16F4A46D1EEAB26E6CACE5AA7CD.m3u8"
+        },
+        {
             "name": "Kara - Kara Sezon 1 Bolum 2 Izle",
             "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kara.jpg?v=1707115133",
             "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/01/11/7409B7217AB9AAF8680BE02C30A80A38.m3u8"
