@@ -4,6 +4,7 @@ import json
 import os
 import re
 from tqdm import tqdm
+import random
 import time
 
 # --- AYARLAR ---
@@ -14,26 +15,47 @@ DIRS = {
     "programs": os.path.join(ROOT_DIR, "program")
 }
 
-# Oturum Başlat
-session = requests.Session()
-# Daha güncel bir User-Agent ve ek headerlar
-session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "X-Requested-With": "XMLHttpRequest",
-    "Referer": BASE_URL,
-    "Origin": BASE_URL,
-    "Sec-Ch-Ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Ch-Ua-Platform": '"Windows"'
-})
+# --- PROXY LİSTESİ (ÇOK ÖNEMLİ) ---
+# Buraya "ip:port" formatında ÇALIŞAN Türk proxyleri eklemelisin.
+# Google'a "Turkey free proxy list" yazıp güncel ip:port bulup buraya ekle.
+TR_PROXIES = [
+    # Örnek format (Bunlar çalışmayabilir, yenilerini bulmalısın):
+    # "88.255.102.12:8080",
+    # "195.175.10.1:80",
+]
+
+# Eğer liste boşsa proxy kullanmadan dener (GitHub'da hata verir)
+USE_PROXY = len(TR_PROXIES) > 0
+
+def get_session():
+    """Proxy destekli session oluşturur"""
+    sess = requests.Session()
+    sess.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "tr-TR,tr;q=0.9",
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": BASE_URL,
+        "Origin": BASE_URL
+    })
+    
+    if USE_PROXY:
+        proxy = random.choice(TR_PROXIES)
+        # Proxy formatı: http://ip:port
+        p_url = f"http://{proxy}"
+        sess.proxies = {"http": p_url, "https": p_url}
+        print(f"🌍 Proxy ile bağlanılıyor: {proxy}")
+    
+    return sess
+
+# Global session nesnesi
+session = get_session()
 
 def get_csrf_token():
     """Siteye girip güvenlik tokenını (CSRF) alır."""
     print("🔑 Siteye bağlanılıyor ve Token alınıyor...")
     try:
-        r = session.get(BASE_URL, timeout=15)
+        r = session.get(BASE_URL, timeout=20)
         soup = BeautifulSoup(r.text, 'html.parser')
         
         token_tag = soup.find('meta', {'name': 'csrf-token'})
@@ -43,9 +65,7 @@ def get_csrf_token():
             print(f"✅ Token alındı: {token[:10]}...")
             return True
         else:
-            print("❌ HATA: CSRF Token bulunamadı! Sayfa içeriği değişmiş veya engellenmiş olabilir.")
-            # Debug için sayfa başlığını yazdır
-            print(f"Sayfa Başlığı: {soup.title.string if soup.title else 'Yok'}")
+            print("❌ HATA: CSRF Token bulunamadı! (IP Engeli Olabilir)")
             return False
     except Exception as e:
         print(f"❌ Bağlantı hatası: {e}")
@@ -67,7 +87,6 @@ def get_episodes(program_id, show_name):
     url = f"{BASE_URL}/ajax/videos"
     episode_list = []
     
-    # Payload
     payload = {
         'filter': 'season',
         'season': 1,
@@ -79,12 +98,16 @@ def get_episodes(program_id, show_name):
         'sorting': 'asc'
     }
 
+    retry_count = 0
     while payload['season'] < 10:
         try:
-            r = session.post(url, data=payload, timeout=10)
+            r = session.post(url, data=payload, timeout=15)
+            
+            # JSON Hatası olursa (HTML dönerse)
             try:
                 resp_json = r.json()
             except:
+                # Geo-block yedik muhtemelen, döngüyü kır
                 break 
 
             html = resp_json.get('data', '')
@@ -181,38 +204,26 @@ def main():
 
         while has_next:
             try:
-                # Type'ı payload'dan çıkarıyoruz, çünkü endpoint zaten /ajax/series
-                # veya API'nin beklediği spesifik değeri gönderiyoruz.
                 payload = {
                     'page': page,
                     'count': 50,
                     'orderBy': 'id',
-                    'sorting': 'desc'
+                    'sorting': 'desc',
+                    'type': conf['type']
                 }
-                # Eski koddaki gibi type göndermek gerekirse buraya ekle ama genelde endpoint yeterlidir.
-                # Eğer type zorunluysa '1' (dizi) veya '2' (program) gibi int değerler denenmeli.
-                # Şimdilik orijinal mantığı koruyup type'ı string olarak ekliyorum ama debug basacağız.
-                payload['type'] = conf['type'] 
 
                 r = session.post(conf['url'], data=payload, timeout=20)
-
-                resp = None
+                
                 try:
                     resp = r.json()
-                except json.JSONDecodeError:
-                    print(f"⚠️ JSON Ayrıştırma Hatası! Status Code: {r.status_code}")
-                    print(f"📄 Gelen Veri (İlk 200 karakter): {r.text[:200]}")
+                except:
+                    print("⚠️ JSON Hatası: Proxy engellenmiş veya sunucu yanıt vermiyor.")
                     has_next = False
                     break
 
                 html = resp.get('data', '')
                 if not html:
-                    print(f"⚠️ API 'data' alanı boş döndü. (Sayfa: {page})")
-                    # Eğer count 0 ise veya boşsa
-                    if 'count' in resp:
-                         print(f"ℹ️ Sunucudan gelen count: {resp['count']}")
-                    else:
-                         print(f"ℹ️ Sunucu tamamen boş data döndü. Muhtemel Geo-Block.")
+                    print(f"⚠️ API verisi boş (Sayfa {page}). Geo-Block veya sayfa sonu.")
                     has_next = False
                     break
 
@@ -220,7 +231,6 @@ def main():
                 items = soup.find_all("div", {"class": "list-item"})
 
                 if not items:
-                    print(f"⚠️ HTML parse edildi ama 'list-item' bulunamadı.")
                     has_next = False
                     break
 
@@ -263,10 +273,10 @@ def main():
                         pass
                 page += 1
             except Exception as e:
-                print(f"Liste döngüsü hatası: {e}")
+                print(f"Hata: {e}")
                 has_next = False
 
-    print("\n📦 Ana dosyalar oluşturuluyor...")
+    print("\n📦 Ana dosyalar kaydediliyor...")
     with open(os.path.join(ROOT_DIR, "now-diziler.json"), "w", encoding="utf-8") as f:
         json.dump(all_series, f, ensure_ascii=False, indent=4)
     create_m3u(os.path.join(ROOT_DIR, "now-diziler.m3u"), all_series)
