@@ -11,34 +11,42 @@ except ImportError:
     print("HATA: 'jsontom3u.py' dosyası bulunamadı!")
     exit(1)
 
-# Çıktıların gideceği klasör
 OUTPUT_FOLDER = "KanalD"
-
 if not os.path.exists(OUTPUT_FOLDER):
     os.makedirs(OUTPUT_FOLDER)
 
 site_base_url = "https://www.kanald.com.tr"
 
+# Tarayıcı gibi görünmek için Header
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+}
+
 def get_stream_url(media_id):
     url = "https://www.kanald.com.tr/actions/media"
     params = {"id": media_id, "p": "1", "pc": "1", "isAMP": "false"}
     try:
-        r = requests.get(url, params=params, timeout=10)
+        r = requests.get(url, params=params, headers=HEADERS, timeout=10)
         data = r.json()["data"]
+        
+        if "media" not in data or "link" not in data["media"]:
+            return ""
+
         if data["media"]["link"]["type"] == "video/dailymotion":
             return ""
-        else:
-            path = data["media"]["link"]["securePath"].split("?")[0]
-            if path[0] != "/":
-                path = "/" + path
-            full_url = data["media"]["link"]["serviceUrl"] + path
-            return full_url
+        
+        path = data["media"]["link"]["securePath"].split("?")[0]
+        if path[0] != "/":
+            path = "/" + path
+        full_url = data["media"]["link"]["serviceUrl"] + path
+        return full_url
     except:
         return ""
 
 def parse_bolum_page(url):
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.content, "html.parser")
         link_tag = soup.find("link", {"itemprop": "embedURL"})
         if link_tag:
@@ -50,21 +58,29 @@ def parse_bolum_page(url):
 def parse_bolumler_page(url):
     item_list = []
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.content, "html.parser")
-        listing = soup.find("section", {"class": "listing-holder"})
-        if not listing: return []
         
-        items = listing.find_all("div", {"class": "item"})
+        # Sayfadaki tüm .item class'lı öğeleri ara (Daha geniş kapsamlı)
+        items = soup.find_all("div", {"class": "item"})
+        
         for item in items:
             a_tag = item.find("a")
-            img_tag = item.find("img")
             title_tag = item.find("h3", {"class": "title"})
+            img_tag = item.find("img")
             
-            if a_tag and img_tag and title_tag:
+            if a_tag and title_tag:
                 item_url = site_base_url + a_tag.get("href")
-                item_img = img_tag.get("data-src") or img_tag.get("src")
                 item_name = title_tag.get_text().strip()
+                item_img = ""
+                if img_tag:
+                    item_img = img_tag.get("data-src") or img_tag.get("src") or ""
+                
+                # Sadece geçerli linkleri ekle
+                if "/bolumler/" in item_url or "/klipler/" in item_url or "/fragmanlar/" in item_url:
+                     # Sadece video sayfalarını almaya çalışalım
+                     pass # Bölüm listesi olduğu için hepsini alıyoruz
+                
                 item_list.append({"name": item_name, "img": item_img, "url": item_url})
     except:
         pass
@@ -72,70 +88,90 @@ def parse_bolumler_page(url):
 
 def get_bolumler_page(url):
     all_items = []
-    url = url + "/bolumler"
-    try:
-        r = requests.get(url, allow_redirects=False, timeout=10)
-        if r.status_code == 200:
+    # Genellikle bölümler /bolumler altındadır
+    bolumler_urls = [url + "/bolumler", url] # Hem ana sayfayı hem bölümler sayfasını dene
+    
+    visited_urls = set()
+
+    for b_url in bolumler_urls:
+        if b_url in visited_urls: continue
+        visited_urls.add(b_url)
+
+        try:
+            r = requests.get(b_url, headers=HEADERS, allow_redirects=True, timeout=10)
+            if r.status_code != 200: continue
+            
             soup = BeautifulSoup(r.content, "html.parser")
+            
+            # Sayfalama
             pagination = soup.find("ul", {"class": "pagination"})
             if pagination:
                 pages = pagination.find_all("li")
                 for page in pages:
                     a_tag = page.find("a")
-                    if not a_tag: continue
-                    page_url = r.url + a_tag.get("href")
-                    all_items += parse_bolumler_page(page_url)
-            else:
-                all_items = parse_bolumler_page(url)
-    except:
-        pass
-    return all_items
+                    if a_tag:
+                        href = a_tag.get("href")
+                        if href:
+                            full_link = site_base_url + href if href.startswith("/") else r.url.split("?")[0] + href
+                            if full_link not in visited_urls:
+                                visited_urls.add(full_link)
+                                all_items += parse_bolumler_page(full_link)
+            
+            # Mevcut sayfayı da oku
+            all_items += parse_bolumler_page(b_url)
 
-def get_arsiv_page(url):
-    all_items = []
+        except:
+            pass
+            
+    # Tekrarları temizle
+    unique_items = {v['url']: v for v in all_items}.values()
+    return list(unique_items)
+
+def get_main_page_list(url):
+    all_series = []
+    print(f"Ana Kategori Taranıyor: {url}")
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.content, "html.parser")
         
-        def parse_arsiv(page_url):
-            lst = []
-            try:
-                r_sub = requests.get(page_url, timeout=10)
-                s_sub = BeautifulSoup(r_sub.content, "html.parser")
-                listing = s_sub.find("section", {"class": "listing-holder"})
-                if listing:
-                    for item in listing.find_all("div", {"class": "item"}):
-                        a_tag = item.find("a")
-                        img_tag = item.find("img")
-                        title_tag = item.find("h3", {"class": "title"})
-                        if a_tag and img_tag and title_tag:
-                            i_url = site_base_url + a_tag.get("href")
-                            i_img = img_tag.get("data-src") or img_tag.get("src")
-                            i_name = title_tag.get_text().strip()
-                            lst.append({"name": i_name, "img": i_img, "url": i_url})
-            except:
-                pass
-            return lst
+        # Sayfadaki tüm potansiyel dizi/program kartlarını bul
+        # Kanal D yapısında genellikle 'item' classı kullanılır
+        items = soup.find_all("div", {"class": "item"})
+        
+        print(f"Bulunan potansiyel içerik sayısı: {len(items)}")
 
-        pagination = soup.find("ul", {"class": "pagination"})
-        if pagination:
-            for page in pagination.find_all("li"):
-                a_tag = page.find("a")
-                if a_tag:
-                    full_link = r.url.split("?")[0] + a_tag.get("href") if "?" in r.url else r.url + a_tag.get("href")
-                    # Basit fix: pagination linkleri bazen tam bazen relative gelebilir, burada basit tutuyoruz
-                    # Genelde "?p=2" şeklindedir
-                    all_items += parse_arsiv(site_base_url + a_tag.get("href") if a_tag.get("href").startswith("/") else r.url + a_tag.get("href"))
-        else:
-            all_items = parse_arsiv(url)
-    except:
-        pass
-    return all_items
+        for item in items:
+            a_tag = item.find("a")
+            title_tag = item.find("h3", {"class": "title"})
+            img_tag = item.find("img")
+            
+            if a_tag and title_tag:
+                link = a_tag.get("href")
+                # Gereksiz linkleri filtrele (video, galeri vs değil, ana dizi sayfası olmalı)
+                # Genellikle /diziler/arka-sokaklar gibi olur.
+                if link.startswith("/"):
+                    full_url = site_base_url + link
+                    name = title_tag.get_text().strip()
+                    img = img_tag.get("data-src") or img_tag.get("src") or "" if img_tag else ""
+                    
+                    all_series.append({"name": name, "img": img, "url": full_url})
+
+    except Exception as e:
+        print(f"Hata: {e}")
+    
+    # URL tekrarını önle
+    unique_series = {v['url']: v for v in all_series}.values()
+    return list(unique_series)
 
 def main(url, name):
     data = []
-    series_list = get_arsiv_page(url)
-    print(f"Toplam {len(series_list)} içerik bulundu: {name}")
+    series_list = get_main_page_list(url)
+    
+    if not series_list:
+        print(f"UYARI: {name} kategorisinde hiç içerik bulunamadı!")
+        return
+
+    print(f"{name} için {len(series_list)} adet içerik bulundu. Bölümler taranıyor...")
     
     for serie in tqdm(series_list, desc=name):
         episodes = get_bolumler_page(serie["url"])
@@ -143,32 +179,33 @@ def main(url, name):
             temp_serie = serie.copy()
             temp_serie["episodes"] = []
             
-            # Son 5 bölümü alarak test edebilirsin, tümünü almak için [:5] kısmını sil.
-            # Hız kazanmak için şu an tümünü alıyoruz:
-            for episode in episodes:
+            # İlk 10 bölümü kontrol et (Çok uzun sürmemesi için sınırlandırılabilir, tümü için kaldır)
+            for episode in episodes: 
                 media_url = parse_bolum_page(episode["url"])
-                stream_url = get_stream_url(media_url)
-                if stream_url and stream_url != " ":
-                    episode["stream_url"] = stream_url
-                    temp_serie["episodes"].append(episode)
+                if media_url:
+                    stream_url = get_stream_url(media_url)
+                    if stream_url and stream_url != " ":
+                        episode["stream_url"] = stream_url
+                        temp_serie["episodes"].append(episode)
             
             if temp_serie["episodes"]:
                 data.append(temp_serie)
 
-    # Dosyaları KanalD klasörüne kaydet
-    create_single_m3u(OUTPUT_FOLDER, data, name)
-    
-    json_path = os.path.join(OUTPUT_FOLDER, f"{name}.json")
-    with open(json_path, "w+", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    if data:
+        create_single_m3u(OUTPUT_FOLDER, data, name)
         
-    # Alt klasörleme (KanalD/arsiv-diziler/DiziAdi/playlist.m3u)
-    sub_folder = os.path.join(OUTPUT_FOLDER, name)
-    create_m3us(sub_folder, data)
+        json_path = os.path.join(OUTPUT_FOLDER, f"{name}.json")
+        with open(json_path, "w+", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+            
+        sub_folder = os.path.join(OUTPUT_FOLDER, name)
+        create_m3us(sub_folder, data)
+        print(f"Tamamlandı: {name}")
 
 if __name__ == "__main__":
-    print("--- DİZİLER BAŞLIYOR ---")
-    main("https://www.kanald.com.tr/diziler/arsiv", "arsiv-diziler")
+    # YENİ LİNKLER
+    print("--- DİZİLER ---")
+    main("https://www.kanald.com.tr/diziler", "diziler")
     
-    print("--- PROGRAMLAR BAŞLIYOR ---")
-    main("https://www.kanald.com.tr/programlar/arsiv", "arsiv-programlar")
+    print("\n--- PROGRAMLAR ---")
+    main("https://www.kanald.com.tr/programlar", "programlar")
