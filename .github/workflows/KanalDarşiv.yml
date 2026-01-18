@@ -14,40 +14,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. ADIM: Repoyu Tam Geçmişiyle Çek (fetch-depth: 0 çok önemli)
       - name: 📥 Repoyu Çek (Checkout)
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Tüm geçmişi çek ki çakışma olmasın
+          fetch-depth: 0 
 
+      # 2. ADIM: Python Kurulumu
       - name: 🐍 Python Kurulumu
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 3. ADIM: Kütüphaneleri Yükle
       - name: 📦 Kütüphaneleri Yükle
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 tqdm
 
-      # Klasörün varlığından emin oluyoruz
+      # 4. ADIM: Klasör Kontrolü
       - name: 📂 Klasör Yapısını Doğrula
         run: mkdir -p KanalD_Arsiv
 
+      # 5. ADIM: Scripti Çalıştır
       - name: 🚀 Kanal D Tarayıcıyı Çalıştır
-        # Python dosya adının repo'daki adla AYNI olduğundan emin ol!
-        # Eğer dosya adın farklıysa burayı düzelt.
         run: |
+          # Dosya adının repodakiyle BİREBİR aynı olduğundan emin ol
           python kanald_full_scraper.py
 
-      - name: 🔍 Oluşan Dosyaları Listele (Kontrol)
+      # 6. ADIM: Dosyaları Listele (Kontrol Amaçlı)
+      - name: 🔍 Oluşan Dosyaları Listele
         run: ls -R KanalD_Arsiv/
 
+      # 7. ADIM: Hata Veren "Push" Kısmının Düzeltilmiş Hali
       - name: 💾 Sonuçları Kaydet ve Yükle (Fix: Rebase)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Oluşan klasörü ekle
+          # Arşiv klasörünü ekle
           git add KanalD_Arsiv
           
           # Değişiklik var mı kontrol et
@@ -57,9 +62,10 @@ jobs:
             git commit -m "Kanal D Güncellemesi: Otomatik Arşiv"
             
             # --- KRİTİK DÜZELTME BURADA ---
-            # Repodaki son değişiklikleri çek ve üzerine yaz (Rebase)
+            # GitHub'daki son değişiklikleri çekip bizimkilerin altına koyar (Rebase)
+            # Bu satır "fetch first" hatasını çözer.
             git pull --rebase origin main
             
-            # Şimdi yükle
+            # Şimdi güvenle yükle
             git push origin main
           fi
