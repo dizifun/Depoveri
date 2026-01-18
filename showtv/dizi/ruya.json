@@ -1,0 +1,47 @@
+{
+    "name": "Rüya",
+    "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+    "url": "https://www.showtv.com.tr/dizi/tanitim/ruya/1923",
+    "episodes": [
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 1 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/6C4C5DF6D191B1239746F7F4F0482A69.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 2 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/F3F7E1FBC431ACB0416208367DAF27A4.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 3 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/00600FC433A0262948CF776FD8070F6D.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 4 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/B6B23A9AE6682179EB2B40887C49B78D.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 7 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/613A471EBC34F208193150CA38E8CAC8.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 8 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/5F5543A9B202D3C545EF7E339DC4160C.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 9 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/1F1C9D5B5911EE208583012556560281.m3u8"
+        },
+        {
+            "name": "Rüya - Ruya Sezon 1 Bolum 10 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/ruya.jpg?v=1706513658",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/08/06/2D83CA44A6793342163C2785D24ABB42.m3u8"
+        }
+    ]
+}

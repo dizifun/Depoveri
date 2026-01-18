@@ -1,0 +1,27 @@
+{
+    "name": "Şeref Sözü",
+    "img": "https://mo.ciner.com.tr/showtv/iu/300x300/seref-sozu.jpg?v=1719842149",
+    "url": "https://www.showtv.com.tr/dizi/tanitim/seref-sozu/2750",
+    "episodes": [
+        {
+            "name": "Şeref Sözü - Seref Sozu Sezon 1 Bolum 1 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/seref-sozu.jpg?v=1719842149",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2020/10/22/5FA7CD4CF1CD690F7D1AE6066C7130DC.m3u8"
+        },
+        {
+            "name": "Şeref Sözü - Seref Sozu Sezon 1 Bolum 2 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/seref-sozu.jpg?v=1719842149",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2020/10/22/0EE5741345925568FF2A6505343CD06A.m3u8"
+        },
+        {
+            "name": "Şeref Sözü - Seref Sozu Sezon 1 Bolum 3 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/seref-sozu.jpg?v=1719842149",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2020/10/28/53C5946B1480610A92D584722A26E9F4.m3u8"
+        },
+        {
+            "name": "Şeref Sözü - Seref Sozu Sezon 1 Bolum 4 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/seref-sozu.jpg?v=1719842149",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2020/11/04/B2D9FCCC21F5A5DC750A015C68AA7053.m3u8"
+        }
+    ]
+}

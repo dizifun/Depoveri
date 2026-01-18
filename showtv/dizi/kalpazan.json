@@ -1,0 +1,47 @@
+{
+    "name": "Kalpazan",
+    "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+    "url": "https://www.showtv.com.tr/dizi/tanitim/kalpazan/2984",
+    "episodes": [
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 1 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/10/21/B6A6D05BCDA76520963AB90E8536CEF8.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 2 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/10/28/81F860B8BF0A19F99488E80861CBD1F7.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 3 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/11/04/6E60D48E57930FD1C8D978935F5F2BA4.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 4 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/11/11/4D055071517EC5C3D5061066ABB8E54C.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 5 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/11/19/460BECDABDC33CEF69724ADE3CA983DA.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 6 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/11/25/7F29D07BA2D3BDF0F83F702410A2443F.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 7 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/12/03/BEB5C01CD79919A5BED4B6BB76794862.m3u8"
+        },
+        {
+            "name": "Kalpazan - Kalpazan Sezon 1 Bolum 8 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/kalpazan.jpg?v=1734008241",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2024/12/09/CC08D69B53ECC4C53156947C9A0B33E7.m3u8"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "name": "Nöbet",
+    "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+    "url": "https://www.showtv.com.tr/dizi/tanitim/nobet/2464",
+    "episodes": [
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 1 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/03/03/D67716A08A1772C6FA2E2393B4E9FC1C.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 2 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/03/10/F122616BC8A26E6D92F975F09C81FFA5.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 3 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/03/17/A3B583A2995F6656515D9FF57A42F6F0.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 4 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/03/24/6D9F9A9B6DCD794E112ED18BDE528519.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 5 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/04/07/F09C2EBB45B44A626C70116AEA53F827.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 6 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/04/14/0E11EBAD2A7078AFEDF00C9030EF8948.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 7 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/04/21/3D2CC02BA426AECA4ED41DC938CDB527.m3u8"
+        },
+        {
+            "name": "Nöbet - Nobet Sezon 1 Bolum 8 Izle",
+            "img": "https://mo.ciner.com.tr/showtv/iu/300x300/nobet.jpg?v=1706513637",
+            "stream_url": "https://vmcdn.ciner.com.tr/ht/2019/05/05/F2E3EBF3A78B87BA8F9F61B75185CFE6.m3u8"
+        }
+    ]
+}
