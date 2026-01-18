@@ -2,9 +2,8 @@ name: Kanal D Full Arşiv Güncelleyici
 
 on:
   schedule:
-    # Her gün sabah 06:00'da (Türkiye saatiyle yaklaşık 09:00) çalışır
     - cron: '0 6 * * *'
-  workflow_dispatch: # Manuel çalıştırma butonu
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Repoyu Çek (Checkout)
+      - name: 📥 Repoyu Çek (Tam Geçmiş)
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Tüm geçmişi çek ki çakışma olmasın
+          fetch-depth: 0 
 
       - name: 🐍 Python Kurulumu
         uses: actions/setup-python@v4
@@ -29,37 +28,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 tqdm
 
-      # Klasörün varlığından emin oluyoruz
-      - name: 📂 Klasör Yapısını Doğrula
+      - name: 📂 Klasör Kontrolü
         run: mkdir -p KanalD_Arsiv
 
-      - name: 🚀 Kanal D Tarayıcıyı Çalıştır
-        # Python dosya adının repo'daki adla AYNI olduğundan emin ol!
-        # Eğer dosya adın farklıysa burayı düzelt.
+      - name: 🚀 Scripti Çalıştır
         run: |
+          # Dosya adının birebir aynı olduğundan emin ol
           python kanald_full_scraper.py
 
-      - name: 🔍 Oluşan Dosyaları Listele (Kontrol)
-        run: ls -R KanalD_Arsiv/
-
-      - name: 💾 Sonuçları Kaydet ve Yükle (Fix: Rebase)
+      - name: 💾 Kaydet ve Yükle (Senkronizasyon Korumalı)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Oluşan klasörü ekle
+          # Arşiv klasörünü ekle
           git add KanalD_Arsiv
           
-          # Değişiklik var mı kontrol et
+          # Eğer değişiklik yoksa hata verme, varsa yükle
           if git diff --staged --quiet; then
-            echo "⚠️ Değişiklik yok, commit atlanıyor."
+            echo "✅ Değişiklik yok. Her şey güncel."
           else
-            git commit -m "Kanal D Güncellemesi: Otomatik Arşiv"
+            git commit -m "Otomatik Güncelleme: Kanal D Arşivi"
             
-            # --- KRİTİK DÜZELTME BURADA ---
-            # Repodaki son değişiklikleri çek ve üzerine yaz (Rebase)
+            # --- İŞTE ÇÖZÜM BURADA ---
+            # Önce sendeki son değişiklikleri çeker, sonra yenileri ekler
             git pull --rebase origin main
             
-            # Şimdi yükle
+            # Şimdi hatasız yükler
             git push origin main
           fi
