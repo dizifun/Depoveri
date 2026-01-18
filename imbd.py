@@ -12,7 +12,7 @@ VIDMODY_BASE = "https://vidmody.com/vs"
 IMG_URL = "https://image.tmdb.org/t/p/w500"
 
 # Hızlandığı için sayfa sayısını artırabilirsin. Şimdilik 5 kalsın, test et.
-MAX_PAGES = 5
+MAX_PAGES = 10000
 # Aynı anda kaç link kontrol edilsin? (Çok artırma, site engelleyebilir)
 MAX_WORKERS = 20 
 
