@@ -1,8 +1,7 @@
 import cloudscraper
 import re
-import json
-import time
 import os
+import time
 import unicodedata
 
 # --- AYARLAR ---
@@ -11,29 +10,26 @@ ROOT_DIR = "yabancidizibox"
 MOVIE_DIR = os.path.join(ROOT_DIR, "filmler")
 SERIES_DIR = os.path.join(ROOT_DIR, "diziler")
 
-# Sayfa sayılarını test için düşük tutabilirsin, tamamı için yükselt.
+# Sayfa sayıları (Daha fazla veri için arttırabilirsin)
 MAX_MOVIE_PAGES = 50 
-MAX_SERIES_PAGES = 10 
+MAX_SERIES_PAGES = 10
 
 scraper = cloudscraper.create_scraper()
 
 def setup_directories():
-    if os.path.exists(ROOT_DIR):
-        # Temiz başlangıç için eski bozuk dosyaları silmek istersen burayı açabilirsin
-        pass
     os.makedirs(MOVIE_DIR, exist_ok=True)
     os.makedirs(SERIES_DIR, exist_ok=True)
 
 def sanitize_filename(name):
-    """Dosya isimlerini okunabilir ve temiz hale getirir (ID kullanmaz)."""
-    if not name: return "Bilinmeyen"
+    """Dosya ismini temizler: 'Hızlı ve Öfkeli' -> 'Hizli-ve-ofkeli.m3u'"""
+    if not name: return "Genel"
     name = str(name).lower()
-    # Türkçe karakterleri İngilizce karşılığına çevir (ş -> s, ı -> i)
+    # Türkçe karakterleri İngilizce yap (ş -> s, ı -> i)
     name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('utf-8')
-    # Sadece harf, rakam ve tire kalsın
+    # Sadece harf ve rakam bırak
     name = re.sub(r'[^\w\s-]', '', name).strip()
     name = re.sub(r'[-\s]+', '-', name)
-    return name.capitalize() if name else "Genel"
+    return name.capitalize()
 
 def extract_vidmody_link(url):
     try:
@@ -46,158 +42,117 @@ def extract_vidmody_link(url):
         imdb_id = imdb_match.group(1)
 
         if "/dizi/" in url:
-            url_match = re.search(r'sezon-(\d+)/bolum-(\d+)', url)
-            if not url_match: return None
-            s, e = url_match.group(1), url_match.group(2)
-            return f"https://vidmody.com/vs/{imdb_id}/s{int(s)}/e{int(e):02d}"
+            match = re.search(r'sezon-(\d+)/bolum-(\d+)', url)
+            if match:
+                return f"https://vidmody.com/vs/{imdb_id}/s{int(match.group(1))}/e{int(match.group(2)):02d}"
         else:
             return f"https://vidmody.com/vs/{imdb_id}"
     except:
         return None
 
 def append_to_m3u(filepath, item, group_name):
-    """Veriyi M3U formatında ekler. group_name parametresi kategoriyi belirler."""
     mode = 'a' if os.path.exists(filepath) else 'w'
     with open(filepath, mode, encoding='utf-8') as f:
         if mode == 'w': f.write("#EXTM3U\n")
-        # BURASI ÖNEMLİ: group-title düzgün yazılıyor
         f.write(f'#EXTINF:-1 tvg-logo="{item["image"]}" group-title="{group_name}", {item["title"]}\n')
         f.write(f'{item["stream_url"]}\n')
 
-# --- FİLMLER ---
 def crawl_movies():
-    print(f"\n=== FİLMLER İŞLENİYOR ===")
-    
-    # Ana dosya yolunu belirle
-    main_movie_m3u = os.path.join(ROOT_DIR, "filmler.m3u")
+    print("--- FİLMLER BAŞLIYOR ---")
+    main_m3u = os.path.join(ROOT_DIR, "filmler.m3u")
     # Dosyayı sıfırla
-    with open(main_movie_m3u, 'w', encoding='utf-8') as f: f.write("#EXTM3U\n")
+    with open(main_m3u, 'w', encoding='utf-8') as f: f.write("#EXTM3U\n")
 
     for page in range(1, MAX_MOVIE_PAGES + 1):
-        api_url = f"{BASE_URL}/api/discover?contentType=movie&limit=24&page={page}"
-        print(f" >> Film Sayfası {page} taranıyor...")
-        
         try:
-            resp = scraper.get(api_url)
-            if resp.status_code != 200: break
-            movies = resp.json().get('movies', [])
+            url = f"{BASE_URL}/api/discover?contentType=movie&limit=24&page={page}"
+            resp = scraper.get(url).json()
+            movies = resp.get('movies', [])
             if not movies: break
 
             for m in movies:
                 title = m.get('title')
                 slug = m.get('slug')
                 genres = m.get('genres', [])
+                category = genres[0] if genres else "Genel" # İlk türü kategori yap
                 
-                # Kategori belirleme (Yoksa 'Genel' yap)
-                category_name = genres[0] if genres else "Genel"
-                
-                # Dosya ismi için temizle (Örn: Aksiyon -> aksiyon.m3u)
-                safe_cat_filename = sanitize_filename(category_name) + ".m3u"
-                
-                poster = m.get('poster_path', '')
-                img_url = f"https://image.tmdb.org/t/p/w500{poster}" if poster else ""
+                # Dosya ismi oluştur (Örn: Korku.m3u)
+                cat_filename = sanitize_filename(category) + ".m3u"
+                cat_path = os.path.join(MOVIE_DIR, cat_filename)
 
-                if not slug: continue
-                
-                full_url = f"{BASE_URL}/film/{slug}"
-                link = extract_vidmody_link(full_url)
-
-                if link:
-                    movie_obj = {
-                        "title": title,
-                        "image": img_url,
-                        "stream_url": link
-                    }
-                    
-                    # 1. Ana film dosyasına ekle (group-title=Kategori olacak)
-                    append_to_m3u(main_movie_m3u, movie_obj, group_name=category_name)
-                    
-                    # 2. Kategorisine özel dosyaya ekle (Örn: filmler/aksiyon.m3u)
-                    cat_path = os.path.join(MOVIE_DIR, safe_cat_filename)
-                    append_to_m3u(cat_path, movie_obj, group_name=category_name)
-                    
-                    print(f"    + {title} -> {category_name}")
-
+                if slug:
+                    link = extract_vidmody_link(f"{BASE_URL}/film/{slug}")
+                    if link:
+                        obj = {
+                            "title": title,
+                            "image": f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}",
+                            "stream_url": link
+                        }
+                        # 1. Ana dosyaya ekle
+                        append_to_m3u(main_m3u, obj, category)
+                        # 2. Kategori dosyasına ekle
+                        append_to_m3u(cat_path, obj, category)
+                        print(f"Film Eklendi: {title} ({category})")
                 time.sleep(0.1)
-                
         except Exception as e:
             print(f"Hata: {e}")
 
-# --- DİZİLER ---
 def crawl_series():
-    print(f"\n=== DİZİLER İŞLENİYOR ===")
-    
-    # Ana dizi dosyası
-    main_series_m3u = os.path.join(ROOT_DIR, "diziler.m3u")
-    with open(main_series_m3u, 'w', encoding='utf-8') as f: f.write("#EXTM3U\n")
+    print("--- DİZİLER BAŞLIYOR ---")
+    main_m3u = os.path.join(ROOT_DIR, "diziler.m3u")
+    with open(main_m3u, 'w', encoding='utf-8') as f: f.write("#EXTM3U\n")
 
     for page in range(1, MAX_SERIES_PAGES + 1):
-        api_url = f"{BASE_URL}/api/discover?contentType=series&limit=12&page={page}"
-        print(f" >> Dizi Sayfası {page} taranıyor...")
-
         try:
-            resp = scraper.get(api_url)
-            if resp.status_code != 200: break
-            series_list = resp.json().get('movies', [])
-            if not series_list: break
+            url = f"{BASE_URL}/api/discover?contentType=series&limit=12&page={page}"
+            resp = scraper.get(url).json()
+            series = resp.get('movies', [])
+            if not series: break
 
-            for s in series_list:
-                s_title = s.get('title') or s.get('name')
-                s_slug = s.get('slug')
-                poster = s.get('poster_path', '')
-                img_url = f"https://image.tmdb.org/t/p/w500{poster}" if poster else ""
+            for s in series:
+                title = s.get('title') or s.get('name')
+                slug = s.get('slug')
+                if not slug: continue
                 
-                if not s_slug or not s_title: continue
+                # Dosya ismi: Vikingler.m3u
+                series_filename = sanitize_filename(title) + ".m3u"
+                series_path = os.path.join(SERIES_DIR, series_filename)
                 
-                # Dizi ismini dosya adı yap (Örn: La Casa De Papel -> La-casa-de-papel.m3u)
-                safe_s_name = sanitize_filename(s_title) + ".m3u"
-                series_file_path = os.path.join(SERIES_DIR, safe_s_name)
+                print(f"Dizi Taranıyor: {title}")
                 
-                print(f"  [*] Dizi: {s_title}")
+                s_page = scraper.get(f"{BASE_URL}/dizi/{slug}").text
+                seasons = sorted(list(set(re.findall(r'href=\"(/dizi/[^/]+/sezon-\d+)\"', s_page))))
                 
-                try:
-                    s_resp = scraper.get(f"{BASE_URL}/dizi/{s_slug}")
-                    season_paths = sorted(list(set(re.findall(r'href=\"(/dizi/[^/]+/sezon-\d+)\"', s_resp.text))))
+                for sea in seasons:
+                    ep_page = scraper.get(BASE_URL + sea).text
+                    episodes = sorted(list(set(re.findall(r'href=\"(/dizi/[^/]+/sezon-\d+/bolum-\d+)\"', ep_page))))
                     
-                    for season_path in season_paths:
-                        ep_resp = scraper.get(BASE_URL + season_path)
-                        ep_paths = sorted(list(set(re.findall(r'href=\"(/dizi/[^/]+/sezon-\d+/bolum-\d+)\"', ep_resp.text))))
+                    for ep in episodes:
+                        link = extract_vidmody_link(BASE_URL + ep)
+                        match = re.search(r'sezon-(\d+)/bolum-(\d+)', ep)
                         
-                        for ep_path in ep_paths:
-                            link = extract_vidmody_link(BASE_URL + ep_path)
+                        if link and match:
+                            full_title = f"{title} - S{match.group(1)} B{match.group(2)}"
+                            short_title = f"S{match.group(1)} B{match.group(2)}"
                             
-                            match = re.search(r'sezon-(\d+)/bolum-(\d+)', ep_path)
-                            if match:
-                                s_num, e_num = match.group(1), match.group(2)
-                                # Başlık: S1 B1
-                                ep_display_title = f"S{s_num} B{e_num}"
-                                # Full Başlık: Vikingler S1 B1 (Ana liste için)
-                                full_display_title = f"{s_title} - S{s_num} B{e_num}"
-                            else:
-                                ep_display_title = "Bölüm"
-                                full_display_title = f"{s_title} - Bölüm"
-
-                            if link:
-                                ep_obj = {"image": img_url, "stream_url": link, "title": full_display_title}
-                                
-                                # 1. Ana Dizi Listesine Ekle (Grup ismi Dizi Adı olacak)
-                                # Böylece listede 'Game of Thrones' klasörü gibi görünür
-                                append_to_m3u(main_series_m3u, ep_obj, group_name=s_title)
-                                
-                                # 2. Sadece O Diziye Ait Dosyaya Ekle
-                                # Buraya sadece bölüm adını yazıyoruz (Zaten dizinin kendi dosyası)
-                                specific_obj = {"image": img_url, "stream_url": link, "title": ep_display_title}
-                                append_to_m3u(series_file_path, specific_obj, group_name=s_title)
-                                
-                            time.sleep(0.1)
-                except Exception as e:
-                    print(f"    Dizi hatası ({s_title}): {e}")
+                            obj = {
+                                "title": full_title, # Ana liste için uzun isim
+                                "image": f"https://image.tmdb.org/t/p/w500{s.get('poster_path')}",
+                                "stream_url": link
+                            }
+                            
+                            # Ana dizi listesine ekle
+                            append_to_m3u(main_m3u, obj, title)
+                            
+                            # Sadece dizinin kendi dosyasına kısa isimle ekle
+                            obj["title"] = short_title
+                            append_to_m3u(series_path, obj, title)
+                        time.sleep(0.1)
 
         except Exception as e:
-            print(f"Genel Hata: {e}")
+            print(f"Hata: {e}")
 
 if __name__ == "__main__":
     setup_directories()
     crawl_movies()
     crawl_series()
-    print("\nTÜM İŞLEMLER BAŞARIYLA TAMAMLANDI.")
