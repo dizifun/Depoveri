@@ -1,0 +1,22 @@
+{
+    "id": "tt31974288",
+    "name": "Agatha Christie - Yedi Kadran",
+    "poster": "https://image.tmdb.org/t/p/w500/3uRQi9HDEAGSadoKee1UHoFCaU9.jpg",
+    "episodes": [
+        {
+            "season": 1,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt31974288/s1/e01"
+        },
+        {
+            "season": 1,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt31974288/s1/e02"
+        },
+        {
+            "season": 1,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt31974288/s1/e03"
+        }
+    ]
+}

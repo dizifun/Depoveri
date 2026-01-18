@@ -1,0 +1,47 @@
+{
+    "id": "tt19244304",
+    "name": "IT: Welcome to Derry",
+    "poster": "https://image.tmdb.org/t/p/w500/nyy3BITeIjviv6PFIXtqvc8i6xi.jpg",
+    "episodes": [
+        {
+            "season": 1,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e01"
+        },
+        {
+            "season": 1,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e02"
+        },
+        {
+            "season": 1,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e03"
+        },
+        {
+            "season": 1,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e04"
+        },
+        {
+            "season": 1,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e05"
+        },
+        {
+            "season": 1,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e06"
+        },
+        {
+            "season": 1,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e07"
+        },
+        {
+            "season": 1,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt19244304/s1/e08"
+        }
+    ]
+}

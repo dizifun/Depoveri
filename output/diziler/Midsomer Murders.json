@@ -1,0 +1,727 @@
+{
+    "id": "tt0118401",
+    "name": "Midsomer Murders",
+    "poster": "https://image.tmdb.org/t/p/w500/pz7tsWxe0TTdfJnWPjZAEnrSl5M.jpg",
+    "episodes": [
+        {
+            "season": 1,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s1/e01"
+        },
+        {
+            "season": 1,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s1/e02"
+        },
+        {
+            "season": 1,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s1/e03"
+        },
+        {
+            "season": 1,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s1/e04"
+        },
+        {
+            "season": 1,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s1/e05"
+        },
+        {
+            "season": 2,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s2/e01"
+        },
+        {
+            "season": 2,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s2/e02"
+        },
+        {
+            "season": 2,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s2/e03"
+        },
+        {
+            "season": 2,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s2/e04"
+        },
+        {
+            "season": 3,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s3/e01"
+        },
+        {
+            "season": 3,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s3/e02"
+        },
+        {
+            "season": 3,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s3/e03"
+        },
+        {
+            "season": 3,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s3/e04"
+        },
+        {
+            "season": 4,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e01"
+        },
+        {
+            "season": 4,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e02"
+        },
+        {
+            "season": 4,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e03"
+        },
+        {
+            "season": 4,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e04"
+        },
+        {
+            "season": 4,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e05"
+        },
+        {
+            "season": 4,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s4/e06"
+        },
+        {
+            "season": 5,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s5/e01"
+        },
+        {
+            "season": 5,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s5/e02"
+        },
+        {
+            "season": 5,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s5/e03"
+        },
+        {
+            "season": 5,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s5/e04"
+        },
+        {
+            "season": 6,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s6/e01"
+        },
+        {
+            "season": 6,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s6/e02"
+        },
+        {
+            "season": 6,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s6/e03"
+        },
+        {
+            "season": 6,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s6/e04"
+        },
+        {
+            "season": 6,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s6/e05"
+        },
+        {
+            "season": 7,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e01"
+        },
+        {
+            "season": 7,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e02"
+        },
+        {
+            "season": 7,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e03"
+        },
+        {
+            "season": 7,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e04"
+        },
+        {
+            "season": 7,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e05"
+        },
+        {
+            "season": 7,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s7/e06"
+        },
+        {
+            "season": 8,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e01"
+        },
+        {
+            "season": 8,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e02"
+        },
+        {
+            "season": 8,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e03"
+        },
+        {
+            "season": 8,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e04"
+        },
+        {
+            "season": 8,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e05"
+        },
+        {
+            "season": 8,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e06"
+        },
+        {
+            "season": 8,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e07"
+        },
+        {
+            "season": 8,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e08"
+        },
+        {
+            "season": 8,
+            "episode": 9,
+            "link": "https://vidmody.com/vs/tt0118401/s8/e09"
+        },
+        {
+            "season": 9,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e01"
+        },
+        {
+            "season": 9,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e02"
+        },
+        {
+            "season": 9,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e03"
+        },
+        {
+            "season": 9,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e04"
+        },
+        {
+            "season": 9,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e05"
+        },
+        {
+            "season": 9,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e06"
+        },
+        {
+            "season": 9,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e07"
+        },
+        {
+            "season": 9,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt0118401/s9/e08"
+        },
+        {
+            "season": 10,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e01"
+        },
+        {
+            "season": 10,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e02"
+        },
+        {
+            "season": 10,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e03"
+        },
+        {
+            "season": 10,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e04"
+        },
+        {
+            "season": 10,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e05"
+        },
+        {
+            "season": 10,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e06"
+        },
+        {
+            "season": 10,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e07"
+        },
+        {
+            "season": 10,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt0118401/s10/e08"
+        },
+        {
+            "season": 11,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e01"
+        },
+        {
+            "season": 11,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e02"
+        },
+        {
+            "season": 11,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e03"
+        },
+        {
+            "season": 11,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e04"
+        },
+        {
+            "season": 11,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e05"
+        },
+        {
+            "season": 11,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e06"
+        },
+        {
+            "season": 11,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s11/e07"
+        },
+        {
+            "season": 12,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e01"
+        },
+        {
+            "season": 12,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e02"
+        },
+        {
+            "season": 12,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e03"
+        },
+        {
+            "season": 12,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e04"
+        },
+        {
+            "season": 12,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e05"
+        },
+        {
+            "season": 12,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e06"
+        },
+        {
+            "season": 12,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s12/e07"
+        },
+        {
+            "season": 13,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e01"
+        },
+        {
+            "season": 13,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e02"
+        },
+        {
+            "season": 13,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e03"
+        },
+        {
+            "season": 13,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e04"
+        },
+        {
+            "season": 13,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e05"
+        },
+        {
+            "season": 13,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e06"
+        },
+        {
+            "season": 13,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e07"
+        },
+        {
+            "season": 13,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt0118401/s13/e08"
+        },
+        {
+            "season": 14,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e01"
+        },
+        {
+            "season": 14,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e02"
+        },
+        {
+            "season": 14,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e03"
+        },
+        {
+            "season": 14,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e04"
+        },
+        {
+            "season": 14,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e05"
+        },
+        {
+            "season": 14,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e06"
+        },
+        {
+            "season": 14,
+            "episode": 7,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e07"
+        },
+        {
+            "season": 14,
+            "episode": 8,
+            "link": "https://vidmody.com/vs/tt0118401/s14/e08"
+        },
+        {
+            "season": 15,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e01"
+        },
+        {
+            "season": 15,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e02"
+        },
+        {
+            "season": 15,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e03"
+        },
+        {
+            "season": 15,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e04"
+        },
+        {
+            "season": 15,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e05"
+        },
+        {
+            "season": 15,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s15/e06"
+        },
+        {
+            "season": 16,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s16/e01"
+        },
+        {
+            "season": 16,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s16/e02"
+        },
+        {
+            "season": 16,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s16/e03"
+        },
+        {
+            "season": 16,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s16/e04"
+        },
+        {
+            "season": 16,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s16/e05"
+        },
+        {
+            "season": 17,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s17/e01"
+        },
+        {
+            "season": 17,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s17/e02"
+        },
+        {
+            "season": 17,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s17/e03"
+        },
+        {
+            "season": 17,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s17/e04"
+        },
+        {
+            "season": 18,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e01"
+        },
+        {
+            "season": 18,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e02"
+        },
+        {
+            "season": 18,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e03"
+        },
+        {
+            "season": 18,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e04"
+        },
+        {
+            "season": 18,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e05"
+        },
+        {
+            "season": 18,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s18/e06"
+        },
+        {
+            "season": 19,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e01"
+        },
+        {
+            "season": 19,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e02"
+        },
+        {
+            "season": 19,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e03"
+        },
+        {
+            "season": 19,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e04"
+        },
+        {
+            "season": 19,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e05"
+        },
+        {
+            "season": 19,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s19/e06"
+        },
+        {
+            "season": 20,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e01"
+        },
+        {
+            "season": 20,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e02"
+        },
+        {
+            "season": 20,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e03"
+        },
+        {
+            "season": 20,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e04"
+        },
+        {
+            "season": 20,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e05"
+        },
+        {
+            "season": 20,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s20/e06"
+        },
+        {
+            "season": 21,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s21/e01"
+        },
+        {
+            "season": 21,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s21/e02"
+        },
+        {
+            "season": 21,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s21/e03"
+        },
+        {
+            "season": 21,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s21/e04"
+        },
+        {
+            "season": 22,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e01"
+        },
+        {
+            "season": 22,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e02"
+        },
+        {
+            "season": 22,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e03"
+        },
+        {
+            "season": 22,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e04"
+        },
+        {
+            "season": 22,
+            "episode": 5,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e05"
+        },
+        {
+            "season": 22,
+            "episode": 6,
+            "link": "https://vidmody.com/vs/tt0118401/s22/e06"
+        },
+        {
+            "season": 23,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s23/e01"
+        },
+        {
+            "season": 23,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s23/e02"
+        },
+        {
+            "season": 23,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s23/e03"
+        },
+        {
+            "season": 23,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s23/e04"
+        },
+        {
+            "season": 24,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s24/e01"
+        },
+        {
+            "season": 24,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s24/e02"
+        },
+        {
+            "season": 24,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s24/e03"
+        },
+        {
+            "season": 24,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s24/e04"
+        },
+        {
+            "season": 25,
+            "episode": 1,
+            "link": "https://vidmody.com/vs/tt0118401/s25/e01"
+        },
+        {
+            "season": 25,
+            "episode": 2,
+            "link": "https://vidmody.com/vs/tt0118401/s25/e02"
+        },
+        {
+            "season": 25,
+            "episode": 3,
+            "link": "https://vidmody.com/vs/tt0118401/s25/e03"
+        },
+        {
+            "season": 25,
+            "episode": 4,
+            "link": "https://vidmody.com/vs/tt0118401/s25/e04"
+        }
+    ]
+}
