@@ -4,6 +4,8 @@ import json
 import os
 import re
 from tqdm import tqdm
+import time
+from datetime import datetime
 
 # --- AYARLAR ---
 BASE_URL = "https://www.nowtv.com.tr"
@@ -89,10 +91,8 @@ def get_episodes(program_id, show_name):
 def extract_id_from_img(img_url):
     """Resim linkinden ID (1825 gibi) ayıklar"""
     if not img_url: return None
-    # Örnek: .../thumbnail/1825 veya .../program/1825/
     match = re.search(r'/(?:thumbnail|program|smart-crop)/(\d+)', img_url)
-    if match:
-        return match.group(1)
+    if match: return match.group(1)
     return None
 
 def collect_items_from_page(url):
@@ -105,30 +105,21 @@ def collect_items_from_page(url):
         r = session.get(url, timeout=20)
         soup = BeautifulSoup(r.text, 'html.parser')
         
-        # Sayfadaki tüm linkleri (posterleri) bul
-        # Genelde bir 'a' tagi içinde 'img' olur
         links = soup.find_all("a", href=True)
-        print(f"   🔎 Sayfada {len(links)} link inceleniyor...")
         
         for link in links:
             href = link['href']
-            
-            # Sistem linklerini atla
-            if any(x in href for x in ["/giris", "/uye-ol", "facebook", "twitter", "instagram", "javascript"]):
-                continue
+            if any(x in href for x in ["/giris", "/uye-ol", "facebook", "twitter", "instagram", "javascript"]): continue
 
-            # Resim var mı?
             img = link.find("img")
             if not img: continue
             
             img_src = img.get('data-src') or img.get('src')
             if not img_src: continue
             
-            # ID'yi resimden çek (Senin verdiğin taktik!)
             pid = extract_id_from_img(img_src)
             if not pid or pid in seen_ids: continue
             
-            # Başlık bul
             title = img.get('alt') or link.get('title') or link.text.strip()
             if not title: continue
 
@@ -139,7 +130,6 @@ def collect_items_from_page(url):
                 "img": img_src,
                 "url": BASE_URL + href if not href.startswith("http") else href
             })
-            
     except Exception as e:
         print(f"❌ Hata: {e}")
         
@@ -161,22 +151,17 @@ def main():
         print(f"✅ {len(items)} içerik bulundu. Bölümler çekiliyor...")
         
         for item in tqdm(items):
-            # ID zaten elimizde, direkt bölümleri çek!
             episodes = get_episodes(item['id'], item['name'])
             
             if episodes:
                 show_data = {"id": item['id'], "name": item['name'], "img": item['img'], "episodes": episodes}
-                
-                # Dosya ismi
                 slug = re.sub(r'[^a-z0-9-]', '', item['name'].lower().replace(" ", "-").replace("ç","c").replace("ğ","g").replace("ı","i").replace("ö","o").replace("ş","s").replace("ü","u"))
                 
                 target_dir = DIRS["series"] if t['type'] == "series" else DIRS["programs"]
                 
-                # JSON Kaydet
                 with open(os.path.join(target_dir, f"{slug}.json"), "w", encoding="utf-8") as f:
                     json.dump(show_data, f, ensure_ascii=False, indent=4)
                 
-                # M3U Kaydet
                 try:
                     with open(os.path.join(target_dir, f"{slug}.m3u"), "w", encoding="utf-8") as f:
                         f.write("#EXTM3U\n")
@@ -188,7 +173,6 @@ def main():
 
     print("\n📦 Dosyalar birleştiriliyor...")
     
-    # Dizi Toplu
     with open(os.path.join(ROOT_DIR, "now-diziler.json"), "w", encoding="utf-8") as f:
         json.dump(all_data["series"], f, ensure_ascii=False, indent=4)
     with open(os.path.join(ROOT_DIR, "now-diziler.m3u"), "w", encoding="utf-8") as f:
@@ -197,7 +181,6 @@ def main():
              for ep in show.get("episodes", []):
                 f.write(f'#EXTINF:-1 tvg-logo="{ep["img"]}" group-title="{show["name"]}",{ep["name"]}\n{ep["stream_url"]}\n')
 
-    # Program Toplu
     with open(os.path.join(ROOT_DIR, "now-programlar.json"), "w", encoding="utf-8") as f:
         json.dump(all_data["programs"], f, ensure_ascii=False, indent=4)
     with open(os.path.join(ROOT_DIR, "now-programlar.m3u"), "w", encoding="utf-8") as f:
@@ -206,7 +189,17 @@ def main():
              for ep in show.get("episodes", []):
                 f.write(f'#EXTINF:-1 tvg-logo="{ep["img"]}" group-title="{show["name"]}",{ep["name"]}\n{ep["stream_url"]}\n')
 
-    print("🏁 İşlem Tamamlandı.")
+    # --- OTOMATİK GITHUB GÖNDERİMİ ---
+    print("\n🚀 GitHub'a yükleniyor (Otomatik)...")
+    try:
+        os.system("git add .")
+        # Tarih ve saat ekle
+        tarih = datetime.now().strftime("%Y-%m-%d %H:%M")
+        os.system(f'git commit -m "Otomatik guncelleme: {tarih}"')
+        os.system("git push")
+        print("✅ Başarıyla GitHub'a yüklendi!")
+    except Exception as e:
+        print(f"❌ Git hatası: {e}")
 
 if __name__ == "__main__":
     main()
