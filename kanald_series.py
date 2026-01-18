@@ -5,7 +5,7 @@ import json
 import os
 import re
 
-# Yardımcı kütüphane kontrolü
+# formatting toolkit for saving lists
 try:
     from jsontom3u import create_single_m3u, create_m3us
 except ImportError:
@@ -18,7 +18,7 @@ if not os.path.exists(OUTPUT_FOLDER):
 
 site_base_url = "https://www.kanald.com.tr"
 
-# Decompile kodlarındaki profesyonel headerlar
+# Synchronized with decompiled headers for mobile emulation
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36 OPR/89.0.0.0",
     "Referer": site_base_url + "/",
@@ -26,14 +26,14 @@ HEADERS = {
 }
 
 def clean_title(text):
-    """'Daha Sonra İzle' gibi gereksiz metinleri temizler."""
     if not text: return "Bilinmeyen Başlık"
+    # Remove metadata text that appears in parsed titles
     text = text.replace("Daha Sonra İzle", "").replace("Şimdi İzle", "")
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
 def get_stream_url(media_id):
-    """KanalD API'sinden gerçek stream linkini çözer."""
+    """Resolves stream using the dedicated actions/media API identified in Kotlin files."""
     api_url = f"{site_base_url}/actions/media"
     params = {"id": media_id, "p": "1", "pc": "1", "isAMP": "false"}
     try:
@@ -49,7 +49,7 @@ def get_stream_url(media_id):
         return ""
 
 def get_episodes_from_page(url):
-    """Bölüm sayfasındaki tüm bölümleri ve linkleri toplar."""
+    """Parses individual episodes from a series page."""
     episodes = []
     try:
         r = requests.get(url, headers=HEADERS, timeout=10)
@@ -75,20 +75,20 @@ def get_episodes_from_page(url):
     return episodes
 
 def get_main_list(url):
-    """Dizi veya program listesini ve sayfalama linklerini tarar."""
+    """Traverses main archives and handles pagination fix for partial URLs."""
     results = []
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         soup = BeautifulSoup(r.content, "html.parser")
         
-        # Sayfalama linklerini düzeltme (Invalid URL hatası çözümü)
+        # Pagination handling to prevent 'Invalid URL' errors
         page_links = [url]
         pagination = soup.find("ul", {"class": "pagination"})
         if pagination:
             for a in pagination.find_all("a"):
                 href = a.get("href", "")
                 if href:
-                    # Link eksikse (örn: ?page=2) tam URL'ye çevir
+                    # Fix: Ensure partial links like '?page=2' are prefixed with site_base_url
                     full_p = site_base_url + href if href.startswith("/") else url.split("?")[0] + href
                     if full_p not in page_links: page_links.append(full_p)
 
@@ -99,10 +99,12 @@ def get_main_list(url):
                 a = item.find("a")
                 if a and a.get("href"):
                     href = a.get("href")
+                    img_tag = item.find("img")
+                    title_tag = item.find("h3", {"class": "title"})
                     results.append({
-                        "name": clean_title(item.get_text()),
+                        "name": clean_title(title_tag.get_text()) if title_tag else clean_title(item.get_text()),
                         "url": site_base_url + href if href.startswith("/") else href,
-                        "img": item.find("img").get("src") if item.find("img") else ""
+                        "img": img_tag.get("src") if img_tag else ""
                     })
     except: pass
     return results
@@ -117,14 +119,14 @@ def main():
         print(f"--- {name} taranıyor ---")
         items = get_main_list(url)
         final_data = []
-        for item in tqdm(items[:20], desc=name): # Örnek için ilk 20, isterseniz sınırı kaldırın
+        for item in tqdm(items, desc=name): 
             eps = get_episodes_from_page(item["url"])
             valid_eps = []
             for ep in eps:
                 try:
                     r_ep = requests.get(ep["url"], headers=HEADERS, timeout=5)
                     soup_ep = BeautifulSoup(r_ep.content, "html.parser")
-                    # Decompile kodundaki data-id yakalama mantığı
+                    # Utilize the data-id parsing logic found in the decompiled code
                     player = soup_ep.find("div", {"class": "player-container"})
                     m_id = player.get("data-id") if player else None
                     if m_id:
@@ -137,6 +139,7 @@ def main():
                 item["episodes"] = valid_eps
                 final_data.append(item)
         
+        # Save results to output folder
         with open(f"{OUTPUT_FOLDER}/{name}.json", "w", encoding="utf-8") as f:
             json.dump(final_data, f, ensure_ascii=False, indent=4)
         create_single_m3u(OUTPUT_FOLDER, final_data, name)
