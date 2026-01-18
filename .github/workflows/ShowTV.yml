@@ -9,15 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # 1. ADIM: İzinleri Ayarla
     permissions:
       contents: write
 
     steps:
-      - name: Repoyu Çek (Checkout)
+      - name: Repoyu Çek
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Tüm geçmişi çek ki çakışma olmasın
+          fetch-depth: 0
 
       - name: Python Kurulumu
         uses: actions/setup-python@v4
@@ -37,16 +36,16 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           
-          # Tüm yeni dosyaları ekle
+          # Dosyaları ekle
           git add showtv/
           
-          # Değişiklik var mı kontrol et
+          # Değişiklik yoksa dur, varsa devam et
           if git diff --staged --quiet; then
             echo "Değişiklik yok, işlem sonlandırılıyor."
           else
             git commit -m "Show TV Listeleri Güncellendi: $(date)"
             
-            # ÇAKIŞMAYI ÖNLEMEK İÇİN ÖNCE ÇEK (PULL), SONRA GÖNDER (PUSH)
+            # ÇAKIŞMA ÖNLEYİCİ: Önce çek, sonra gönder
             git pull --rebase origin main
             git push origin main
           fi
