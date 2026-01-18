@@ -1,9 +1,9 @@
-
 import requests
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 import json
 import os
+import re
 
 try:
     from jsontom3u import create_single_m3u
@@ -20,10 +20,12 @@ HEADERS = {
     "Referer": "https://www.kanald.com.tr/"
 }
 
-def clean_text(text):
-    if not text: return ""
+def clean_title(text):
+    if not text: return "Bilinmeyen Film"
     text = text.replace("Daha Sonra İzle", "").replace("Şimdi İzle", "")
-    return " ".join(text.split()).strip()
+    text = text.replace("\n", " ").replace("\r", " ")
+    text = re.sub(' +', ' ', text)
+    return text.strip()
 
 def get_stream_url(url):
     try:
@@ -68,7 +70,6 @@ def main():
         
         for item in tqdm(items):
             a = item.find("a")
-            # Başlık temizleme
             t = item.find("h3") or item.find("div", {"class": "title"})
             img_tag = item.find("img")
             
@@ -79,7 +80,7 @@ def main():
                 if t: raw_name = t.get_text()
                 else: raw_name = a.get("title") or "Bilinmeyen Film"
                 
-                name = clean_text(raw_name)
+                name = clean_title(raw_name)
                 img = img_tag.get("data-src") or img_tag.get("src") if img_tag else ""
                 
                 stream = get_stream_url(link)
@@ -92,7 +93,7 @@ def main():
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
             create_single_m3u(OUTPUT_FOLDER, data, "kanald-sinemalar")
-            print(f"Toplam {len(movies)} film başarıyla eklendi.")
+            print(f"Toplam {len(movies)} film kaydedildi.")
         else:
             print("Kaydedilecek film bulunamadı.")
             
