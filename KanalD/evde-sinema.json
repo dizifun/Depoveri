@@ -1,0 +1,61 @@
+[
+    {
+        "name": "Evde Sinema",
+        "episodes": [
+            {
+                "name": "Çetin Ceviz 2",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e76623044539512c8d2bc3e.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/cetin-ceviz-2",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277929_08ea/index.m3u8"
+            },
+            {
+                "name": "Aşkın 5 Hali",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e76637844539512c8d2bc52.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/askin-5-hali",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277909_08c2/index.m3u8"
+            },
+            {
+                "name": "Boşu Bir Yerde",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e7665b944539512c8d2bc8b.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/bosu-bir-yerde",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277916_08d0/index.m3u8"
+            },
+            {
+                "name": "Beceriksiz Katil",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e7664fc44539512c8d2bc76.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/beceriksiz-katil",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277913_08ca/index.m3u8"
+            },
+            {
+                "name": "Deli Saçması",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e766bd344539512c8d2bcee.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/deli-sacmasi",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277930_08ec/index.m3u8"
+            },
+            {
+                "name": "Mahrumlar",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e766dcf44539512c8d2bd03.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/mahrumlar",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277936_08f8/index.m3u8"
+            },
+            {
+                "name": "Elimiz Mahkum",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e7667d544539512c8d2bca6.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/elimiz-mahkum",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277931_08ee/index.m3u8"
+            },
+            {
+                "name": "Şimdi Aşk",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e76693044539512c8d2bccb.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/simdi-ask",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277942_0904/index.m3u8"
+            },
+            {
+                "name": "Zengin Kısmet",
+                "img": "https://image.kanald.com.tr/i/kanald/100/264x111/5e766e6944539512c8d2bd29.jpg",
+                "url": "https://www.kanald.com.tr/evde-sinema/zengin-kismet",
+                "stream_url": "https://kanaldvod.duhnet.tv/S11/HLS_VOD/277945_090a/index.m3u8"
+            }
+        ]
+    }
+]
