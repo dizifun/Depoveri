@@ -8,269 +8,299 @@ import time
 
 # --- AYARLAR ---
 BASE_URL = "https://www.nowtv.com.tr"
-# NowTV istekleri için gerekli Header bilgileri
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "X-Requested-With": "XMLHttpRequest"
-}
-
-# Klasör Yapılandırması
 ROOT_DIR = "now"
 DIRS = {
     "series": os.path.join(ROOT_DIR, "dizi"),
     "programs": os.path.join(ROOT_DIR, "program")
 }
 
-# Kategori Konfigürasyonu
-CATEGORIES = [
-    {"type": "series", "api_url": f"{BASE_URL}/ajax/series", "name": "Guncel Diziler"},
-    {"type": "programs", "api_url": f"{BASE_URL}/ajax/programs", "name": "Guncel Programlar"},
-    {"type": "series", "api_url": f"{BASE_URL}/ajax/archive", "name": "Arsiv Diziler"},
-    {"type": "programs", "api_url": f"{BASE_URL}/ajax/archive", "name": "Arsiv Programlar"}
-]
+# Session başlat (Cookie'leri tutmak için)
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": BASE_URL
+})
 
-def create_m3u(file_path, data):
-    """Verilen JSON verisinden M3U dosyası oluşturur."""
+def get_csrf_token():
+    """
+    Ana sayfaya gidip CSRF token alır. Bu token POST istekleri için zorunludur.
+    """
+    print("Siteye bağlanılıyor ve Token alınıyor...")
     try:
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
-            for item in data:
-                # Eğer item bir dizi/program ise ve içinde bölümler varsa
-                if "episodes" in item:
-                    for ep in item["episodes"]:
-                        name = ep.get("name", "Bilinmeyen")
-                        img = ep.get("img", "")
-                        url = ep.get("stream_url", "")
-                        # Eğer stream url boşsa veya hatalıysa, sayfa linkini koy (fallback)
-                        if not url:
-                            url = ep.get("url", "")
-                            if url and not url.startswith("http"):
-                                url = BASE_URL + url
-                        
-                        if url:
-                            f.write(f'#EXTINF:-1 tvg-logo="{img}" group-title="{item["name"]}",{name}\n')
-                            f.write(f'{url}\n')
+        # Normal bir browser gibi ana sayfaya git
+        r = session.get(BASE_URL)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        token = soup.find('meta', {'name': 'csrf-token'})
+        if token and token.get('content'):
+            csrf = token['content']
+            # Session header'larına ekle
+            session.headers.update({'X-CSRF-TOKEN': csrf})
+            print(f"Token alındı: {csrf[:10]}...")
+            return True
+        else:
+            print("HATA: CSRF Token bulunamadı!")
+            return False
     except Exception as e:
-        print(f"M3U oluşturma hatası ({file_path}): {e}")
+        print(f"Bağlantı hatası: {e}")
+        return False
 
-def get_real_m3u8_from_page(episode_url):
+def get_real_m3u8(episode_url):
     """
-    Bölüm sayfasına gidip kaynak kodundaki source: '...' kısmından
-    ercdn.net uzantılı gerçek m3u8 linkini çeker.
+    Bölüm sayfasından gerçek m3u8 linkini regex ile çeker.
     """
-    if not episode_url:
-        return ""
-        
+    if not episode_url: return ""
     full_url = episode_url if episode_url.startswith("http") else BASE_URL + episode_url
     
     try:
-        # Sayfaya normal bir tarayıcı gibi istek atıyoruz (X-Requested-With olmadan)
-        page_headers = HEADERS.copy()
-        if "X-Requested-With" in page_headers:
-            del page_headers["X-Requested-With"]
-            
-        r = requests.get(full_url, headers=page_headers, timeout=10)
+        # HTML isteği at (Headerlar session'dan gelir)
+        r = session.get(full_url, timeout=10)
         
-        # HTML içinden source: 'https://....m3u8...' yapısını arıyoruz
-        # NowTV player yapısı genellikle: source: 'LINK', şeklindedir.
+        # 1. Yöntem: source: '...' içinde ara
         match = re.search(r"source:\s*['\"](https:\/\/[^'\"]*?\.m3u8[^'\"]*?)['\"]", r.text)
-        
         if match:
             return match.group(1)
-        else:
-            return ""
-    except Exception:
+        
+        # 2. Yöntem: JSON data içinde ara (ADMPlayer)
+        match_json = re.search(r"ADMPlayer\.init\(\{(.*?)\}\);", r.text, re.DOTALL)
+        if match_json:
+            # Source parametresini bulmaya çalış
+            src_match = re.search(r"source:\s*['\"](https:\/\/.*?)['\"]", match_json.group(1))
+            if src_match:
+                return src_match.group(1)
+                
+        return ""
+    except:
         return ""
 
-def get_episodes(program_id, serie_name):
+def get_episodes(program_id, show_name):
     """
-    API üzerinden bölümleri çeker.
+    Program ID'sine göre bölümleri çeker.
     """
-    video_url = f"{BASE_URL}/ajax/videos"
-    body = {
+    url = f"{BASE_URL}/ajax/videos"
+    episode_list = []
+    
+    # Döngü ayarları
+    payload = {
         'filter': 'season',
         'season': 1,
         'program_id': program_id,
         'page': 0,
-        'type': 2, # Full Bölüm Tipi
-        'count': 100,
-        'orderBy': "id",
-        "sorting": "asc"
+        'type': 2,
+        'count': 50,
+        'orderBy': 'id',
+        'sorting': 'asc'
     }
-    
-    episode_list = []
-    flag = True
-    
-    while flag:
+
+    # Max 15 sezon dener
+    while payload['season'] < 15:
         try:
-            r = requests.post(video_url, body, headers=HEADERS)
+            r = session.post(url, data=payload)
             data = r.json()
             html = data.get('data', '')
             total_count = int(data.get('count', 0))
             
+            # Veri yoksa sezon bitti mi kontrol et
             if not html:
-                if body['season'] < 15: # Maksimum sezon kontrolü
-                    body['season'] += 1
-                    body['page'] = 0
+                # Eğer ilk sayfada ve veri yoksa, sonraki sezona geç
+                if payload['page'] == 0:
+                    payload['season'] += 1
                     continue
                 else:
-                    break
+                    # Sayfa bittiyse sonraki sezona geç
+                    payload['season'] += 1
+                    payload['page'] = 0
+                    continue
 
-            soup = BeautifulSoup(html, "html.parser")
+            soup = BeautifulSoup(html, 'html.parser')
             items = soup.find_all("div", {"class": "list-item"})
             
             if not items:
-                flag = False
-                break
+                payload['season'] += 1
+                payload['page'] = 0
+                continue
 
             for item in items:
                 try:
-                    title_tag = item.find("strong")
-                    ep_title = title_tag.get_text().strip() if title_tag else "Bölüm"
-                    full_name = f"{serie_name} - {ep_title}"
+                    name_tag = item.find("strong")
+                    ep_name = name_tag.text.strip() if name_tag else "Bölüm"
+                    full_name = f"{show_name} - {ep_name}"
+                    
+                    link_tag = item.find("a")
+                    page_url = link_tag['href'] if link_tag else ""
                     
                     img_tag = item.find("img")
-                    img = img_tag.get("src") if img_tag else ""
+                    img_url = img_tag['src'] if img_tag else ""
+
+                    # M3U8 linkini çek (Opsiyonel: Çok yavaşlatırsa burayı kapat)
+                    stream_url = get_real_m3u8(page_url)
                     
-                    a_tag = item.find("a")
-                    page_url = a_tag.get("href") if a_tag else ""
-                    
-                    # Gerçek M3U8 linkini çekmeye çalış
-                    stream_url = get_real_m3u8_from_page(page_url)
-                    
-                    # Eğer çekemezse sayfa linkini kullan
+                    # Eğer stream linki bulamazsa sayfa linkini ver
                     if not stream_url:
                         stream_url = BASE_URL + page_url if not page_url.startswith("http") else page_url
 
                     episode_list.append({
                         "name": full_name,
-                        "img": img,
                         "url": page_url,
+                        "img": img_url,
                         "stream_url": stream_url
                     })
                 except:
                     continue
-            
-            # Sayfalama kontrolü
-            if len(items) < body['count'] and body['season'] < 15:
-                 body['season'] += 1
-                 body['page'] = 0
-            elif len(items) == body['count']:
-                body['page'] += 1
+
+            # Sayfalama
+            if len(items) < payload['count']:
+                # Bu sayfada az veri varsa demek ki sezon sonu
+                payload['season'] += 1
+                payload['page'] = 0
             else:
-                flag = False
+                payload['page'] += 1
                 
         except Exception as e:
-            print(f"Bölüm çekme hatası: {e}")
-            flag = False
-
+            # print(f"Hata: {e}")
+            break
+            
     return episode_list
 
-def get_program_list(config):
-    """Dizi veya Program listesini ana sayfadan çeker"""
-    body = {
-        'page': 0,
-        'type': config['type'],
-        'count': '50',
-        'orderBy': 'id',
-        "sorting": 'desc'
-    }
-    
-    results = []
-    flag = True
-    
-    while flag:
-        try:
-            r = requests.post(config['api_url'], body, headers=HEADERS)
-            res_json = r.json()
-            html = res_json.get("data", "")
-            
-            if not html:
-                break
-                
-            soup = BeautifulSoup(html, "html.parser")
-            items = soup.find_all("div", {"class": "list-item"})
-            
-            if items:
-                body['page'] += 1
-                for item in items:
-                    try:
-                        name = item.find("strong").get_text().strip()
-                        img_tag = item.find("img")
-                        img = img_tag.get("src") if img_tag else ""
-                        
-                        # ID parse etme
-                        content_id = "0"
-                        if img:
-                            content_id = img.split("/")[-1].split(".")[0]
-                        
-                        results.append({
-                            "id": content_id,
-                            "name": name,
-                            "img": img
-                        })
-                    except:
-                        pass
-            else:
-                flag = False
-        except:
-            flag = False
-    return results
+def create_m3u(path, data):
+    """M3U dosyası oluşturur"""
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("#EXTM3U\n")
+            # Data bir liste ise (toplu dosya)
+            if isinstance(data, list):
+                for show in data:
+                    if "episodes" in show:
+                        for ep in show["episodes"]:
+                            f.write(f'#EXTINF:-1 tvg-logo="{ep["img"]}" group-title="{show["name"]}",{ep["name"]}\n')
+                            f.write(f'{ep["stream_url"]}\n')
+            # Data tekil bir sözlük ise (tekil dosya)
+            elif isinstance(data, dict) and "episodes" in data:
+                 for ep in data["episodes"]:
+                    f.write(f'#EXTINF:-1 tvg-logo="{ep["img"]}",{ep["name"]}\n')
+                    f.write(f'{ep["stream_url"]}\n')
+    except:
+        pass
 
 def main():
-    # 1. Klasörleri Oluştur
-    os.makedirs(DIRS["series"], exist_ok=True)
-    os.makedirs(DIRS["programs"], exist_ok=True)
+    # Token Al
+    if not get_csrf_token():
+        print("Token alınamadığı için işlem durduruluyor.")
+        return
 
-    all_series_data = []
-    all_programs_data = []
+    # Klasörleri temizle/oluştur
+    for d in DIRS.values():
+        os.makedirs(d, exist_ok=True)
 
-    for cat in CATEGORIES:
-        print(f"--- {cat['name']} taranıyor ---")
-        items = get_program_list(cat)
+    configs = [
+        {"type": "series", "url": f"{BASE_URL}/ajax/series", "name": "Diziler"},
+        {"type": "programs", "url": f"{BASE_URL}/ajax/programs", "name": "Programlar"},
+        # Arşivleri de ekleyebilirsin ama süre uzar
+        {"type": "series", "url": f"{BASE_URL}/ajax/archive", "name": "Arşiv Diziler"}, 
+        {"type": "programs", "url": f"{BASE_URL}/ajax/archive", "name": "Arşiv Programlar"}
+    ]
+
+    all_series = []
+    all_programs = []
+
+    for conf in configs:
+        print(f"\n--- {conf['name']} Taranıyor ---")
         
-        # Her bir dizi/program için
-        for item in tqdm(items):
-            episodes = get_episodes(item['id'], item['name'])
-            
-            if episodes:
-                item_data = item.copy()
-                item_data["episodes"] = episodes
+        # Listeyi çek
+        page = 0
+        has_next = True
+        
+        while has_next:
+            try:
+                # AJAX isteği
+                r = session.post(conf['url'], data={
+                    'page': page,
+                    'type': conf['type'],
+                    'count': 50,
+                    'orderBy': 'id',
+                    'sorting': 'desc'
+                })
                 
-                # Dosya ismi için slug oluştur
-                slug = item['name'].lower().replace(" ", "-").replace("ı","i").replace("ğ","g").replace("ü","u").replace("ş","s").replace("ö","o").replace("ç","c")
-                slug = re.sub(r'[^a-z0-9-]', '', slug)
+                resp = r.json()
+                html = resp.get('data', '')
                 
-                # Kayıt Yeri
-                is_serie = cat['type'] == 'series'
-                target_dir = DIRS["series"] if is_serie else DIRS["programs"]
+                if not html:
+                    has_next = False
+                    break
                 
-                # JSON ve M3U Kaydet (Tekil)
-                with open(os.path.join(target_dir, f"{slug}.json"), "w", encoding="utf-8") as f:
-                    json.dump(item_data, f, ensure_ascii=False, indent=4)
+                soup = BeautifulSoup(html, 'html.parser')
+                items = soup.find_all("div", {"class": "list-item"})
                 
-                create_m3u(os.path.join(target_dir, f"{slug}.m3u"), [item_data])
+                if not items:
+                    has_next = False
+                    break
                 
-                # Ana listeye ekle
-                if is_serie:
-                    all_series_data.append(item_data)
-                else:
-                    all_programs_data.append(item_data)
+                print(f"Sayfa {page+1}: {len(items)} içerik bulundu.")
+                
+                for item in tqdm(items):
+                    try:
+                        show_name = item.find("strong").text.strip()
+                        img_tag = item.find("img")
+                        show_img = img_tag['src'] if img_tag else ""
+                        
+                        # ID al
+                        # Örnek img: .../thumbnail/1819 -> ID: 1819
+                        show_id = "0"
+                        if show_img:
+                            show_id = show_img.split("/")[-1].split(".")[0]
+                        
+                        # Bölümleri çek
+                        episodes = get_episodes(show_id, show_name)
+                        
+                        if episodes:
+                            show_data = {
+                                "id": show_id,
+                                "name": show_name,
+                                "img": show_img,
+                                "episodes": episodes
+                            }
+                            
+                            # Slug (Dosya adı)
+                            slug = show_name.lower().replace(" ", "-").replace("ç","c").replace("ğ","g").replace("ı","i").replace("ö","o").replace("ş","s").replace("ü","u")
+                            slug = re.sub(r'[^a-z0-9-]', '', slug)
+                            
+                            # Kayıt Yeri
+                            is_serie = conf['type'] == 'series'
+                            target_dir = DIRS["series"] if is_serie else DIRS["programs"]
+                            
+                            # Tekil Dosyaları Kaydet
+                            with open(os.path.join(target_dir, f"{slug}.json"), "w", encoding="utf-8") as f:
+                                json.dump(show_data, f, ensure_ascii=False, indent=4)
+                            create_m3u(os.path.join(target_dir, f"{slug}.m3u"), show_data)
+                            
+                            # Ana listeye ekle
+                            if is_serie:
+                                all_series.append(show_data)
+                            else:
+                                all_programs.append(show_data)
+                                
+                    except Exception as e:
+                        # print(f"İçerik hatası: {e}")
+                        pass
 
-    # 2. Ana Dosyaları Oluştur (now klasörü içine)
-    print("Ana dosyalar oluşturuluyor...")
+                page += 1
+                
+            except Exception as e:
+                print(f"Liste çekme hatası: {e}")
+                has_next = False
+
+    # Ana Dosyaları Kaydet
+    print("\nAna dosyalar kaydediliyor...")
     
-    # Diziler Toplu
     with open(os.path.join(ROOT_DIR, "now-diziler.json"), "w", encoding="utf-8") as f:
-        json.dump(all_series_data, f, ensure_ascii=False, indent=4)
-    create_m3u(os.path.join(ROOT_DIR, "now-diziler.m3u"), all_series_data)
+        json.dump(all_series, f, ensure_ascii=False, indent=4)
+    create_m3u(os.path.join(ROOT_DIR, "now-diziler.m3u"), all_series)
     
-    # Programlar Toplu
     with open(os.path.join(ROOT_DIR, "now-programlar.json"), "w", encoding="utf-8") as f:
-        json.dump(all_programs_data, f, ensure_ascii=False, indent=4)
-    create_m3u(os.path.join(ROOT_DIR, "now-programlar.m3u"), all_programs_data)
-
-    print("İşlem Başarılı.")
+        json.dump(all_programs, f, ensure_ascii=False, indent=4)
+    create_m3u(os.path.join(ROOT_DIR, "now-programlar.m3u"), all_programs)
+    
+    print(f"Toplam {len(all_series)} dizi ve {len(all_programs)} program kaydedildi.")
 
 if __name__ == "__main__":
     main()
