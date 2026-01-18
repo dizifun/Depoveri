@@ -4,14 +4,9 @@ import json
 import os
 import sys
 from tqdm import tqdm
+import time
 
-# jsontom3u kütüphanesi ana dizinde olduğu varsayılmıştır
-try:
-    from jsontom3u import create_single_m3u, create_m3us
-except ImportError:
-    print("HATA: 'jsontom3u.py' dosyası bulunamadı. Lütfen ana dizine ekleyin.")
-    sys.exit(1)
-
+# --- AYARLAR ---
 BASE_URL = "https://www.showtv.com.tr"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -27,9 +22,51 @@ DIRS = {
 for d in DIRS.values():
     os.makedirs(d, exist_ok=True)
 
+# --- M3U OLUŞTURMA FONKSİYONLARI (İçeri Gömüldü) ---
+def create_single_m3u(file_path, data_list):
+    """Tekil içerik için M3U oluşturur (Örn: Sadece Rüya Gibi dizisi)"""
+    content = "#EXTM3U\n"
+    for item in data_list:
+        for episode in item.get("episodes", []):
+            name = episode.get("name", "Bilinmeyen Bölüm")
+            img = episode.get("img", "")
+            url = episode.get("stream_url", "")
+            
+            if url:
+                content += f'#EXTINF:-1 tvg-logo="{img}" group-title="{item["name"]}", {name}\n'
+                content += f'{url}\n'
+    
+    # Dosya uzantısı kontrolü
+    if not file_path.endswith(".m3u"):
+        file_path += ".m3u"
+        
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+def create_general_m3u(file_path, data_list, group_name="Genel"):
+    """Genel liste için M3U oluşturur (Tüm diziler tek dosyada)"""
+    content = "#EXTM3U\n"
+    for item in data_list:
+        serie_name = item.get("name", "Genel")
+        for episode in item.get("episodes", []):
+            name = episode.get("name", "Bilinmeyen Bölüm")
+            img = episode.get("img", "")
+            url = episode.get("stream_url", "")
+            
+            if url:
+                content += f'#EXTINF:-1 tvg-logo="{img}" group-title="{group_name}", {name}\n'
+                content += f'{url}\n'
+
+    if not file_path.endswith(".m3u"):
+        file_path += ".m3u"
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+# --- SCRAPER FONKSİYONLARI ---
 def get_soup(url):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=20)
+        r = requests.get(url, headers=HEADERS, timeout=30)
         r.raise_for_status()
         return BeautifulSoup(r.content, "html.parser")
     except Exception as e:
@@ -48,12 +85,10 @@ def get_video_source(url):
             video_data_raw = player_div.get("data-hope-video")
             video_data = json.loads(video_data_raw)
             
-            # M3U8 linkini al
             if "media" in video_data and "m3u8" in video_data["media"]:
-                # Genellikle ilk kaynak standart olandır
                 return video_data["media"]["m3u8"][0]["src"]
     except Exception as e:
-        print(f"Video kaynağı çözülemedi: {url} - Hata: {e}")
+        print(f"Video kaynağı çözülemedi: {url}")
     
     return None
 
@@ -66,23 +101,18 @@ def get_episodes_from_json_ld(soup):
             if not script.string: continue
             try:
                 data = json.loads(script.string)
-                # Dizi/Program bölümleri ItemList tipindedir
                 if data.get("@type") == "ItemList" and "itemListElement" in data:
                     items = data["itemListElement"]
-                    # Bölümleri tersten sırala (Eskiden yeniye veya tam tersi mantığı)
-                    # Genelde JSON-LD sıralı gelir, biz listeye ekleriz.
                     for item in items:
                         episode_url = BASE_URL + item["url"] if not item["url"].startswith("http") else item["url"]
                         episode_list.append({
                             "url": episode_url,
-                            # İsim verisi JSON-LD'de bazen eksik olabilir, URL'den türetilebilir veya detaydan alınabilir
-                            # Şimdilik URL'den basit bir isim çıkarımı yapalım veya boş bırakalım detayda dolsun
-                            "name_temp": "Bölüm" 
+                            "temp_name": "Bölüm"
                         })
             except:
                 continue
-    except Exception as e:
-        print(f"JSON-LD Parsing Hatası: {e}")
+    except:
+        pass
     
     return episode_list
 
@@ -93,24 +123,25 @@ def process_category(category_name, category_url, output_folder):
 
     items_data = []
     
-    # Listeleme sayfasındaki kutuları bul (box-type6)
+    # Kapsayıcıları bul (box-type6 ShowTV'nin yeni yapısı)
     content_boxes = soup.find_all("div", attrs={"data-name": "box-type6"})
     
-    for box in tqdm(content_boxes, desc=f"{category_name} Listesi"):
+    # Hızlı test için [:3] koyabilirsin, tümü için kaldır. Şimdilik tümünü tarıyoruz.
+    for box in tqdm(content_boxes, desc=f"{category_name}"):
         try:
             link_tag = box.find("a")
             img_tag = box.find("img")
-            title_tag = box.find("figcaption").find("span") # Başlık genelde figcaption içindeki ilk span
+            title_tag = box.find("figcaption").find("span")
 
             if not link_tag: continue
 
             item_name = title_tag.get_text(strip=True) if title_tag else "Bilinmiyor"
             item_url = BASE_URL + link_tag.get("href")
-            item_img = img_tag.get("data-src") or img_tag.get("src")
             
-            # Logo/Placeholder kontrolü
-            if "transparent.gif" in item_img and img_tag.get("data-src"):
-                item_img = img_tag.get("data-src")
+            # Resim alma (Lazy load kontrolü)
+            item_img = ""
+            if img_tag:
+                item_img = img_tag.get("data-src") or img_tag.get("src") or ""
 
             # Ana Veri Objesi
             main_item = {
@@ -120,53 +151,46 @@ def process_category(category_name, category_url, output_folder):
                 "episodes": []
             }
 
-            # Detay Sayfasına Git (Bölümleri Al)
+            # Detay Sayfası
             detail_soup = get_soup(item_url)
             if detail_soup:
-                # Bölüm listesini JSON-LD'den çek
                 raw_episodes = get_episodes_from_json_ld(detail_soup)
                 
-                # Eğer JSON-LD boşsa manuel (HTML parsing) denenebilir ama 
-                # ShowTV yapısında JSON-LD oldukça tutarlı.
-                
-                # Her bir bölümün içine girip videoyu bul
-                # (API yükünü azaltmak için sadece ilk 1-2 bölümü test edebilirsin istersen)
-                # Aşağıdaki kod TÜM bölümleri tarar.
-                
-                print(f"  > {item_name}: {len(raw_episodes)} içerik bulundu. Video linkleri taranıyor...")
-                
-                for ep in tqdm(raw_episodes, desc="    Videolar", leave=False):
+                # Bölüm sayısını sınırlayalım (GitHub Actions timeout yememesi için)
+                # Eğer çok eski diziler varsa her gün hepsini taramak 6 saati bulabilir.
+                # Şimdilik son 20 bölümü al diyelim. İstersen bu [:20] kısmını kaldır.
+                for ep in raw_episodes[:20]: 
                     stream_url = get_video_source(ep["url"])
                     if stream_url:
-                        # Bölüm adını ve resmini video sayfasından daha net alabiliriz
-                        ep_name = ep["name_temp"]
-                        ep_img = item_img # Varsayılan olarak dizi kapağı
-                        
-                        # Bölüm sayfasından daha iyi veri çekme denemesi (opsiyonel)
-                        # ep_soup = get_soup(ep["url"]) ... (Hız düşüreceği için atlandı, stream varsa yeterli)
+                        # Bölüm ismini URL'den çıkaralım
+                        slug = ep['url'].split('/')[-2].replace('-', ' ').title()
+                        ep_full_name = f"{item_name} - {slug}"
                         
                         main_item["episodes"].append({
-                            "name": f"{item_name} - {ep['url'].split('/')[-2].replace('-', ' ').title()}", # URL'den okunabilir isim
+                            "name": ep_full_name,
                             "img": item_img,
                             "stream_url": stream_url
                         })
             
             if main_item["episodes"]:
-                # 1. Bu dizi/program için özel JSON oluştur
-                safe_name = item_url.split("/")[-2] # URL slug'ını dosya adı yap
-                json_path = os.path.join(output_folder, f"{safe_name}.json")
+                # Dosya ismi oluştur
+                safe_filename = item_url.split("/")[-1]
+                if not safe_filename or safe_filename.isdigit(): 
+                    safe_filename = item_url.split("/")[-2]
+                
+                # 1. JSON Kaydet
+                json_path = os.path.join(output_folder, f"{safe_filename}.json")
                 with open(json_path, "w", encoding="utf-8") as f:
                     json.dump(main_item, f, ensure_ascii=False, indent=4)
                 
-                # 2. Bu dizi/program için özel M3U oluştur
-                # jsontom3u kütüphanesindeki create_single_m3u kullanımı:
-                # create_single_m3u(path_without_extension, [data_list], prefix_name)
-                create_single_m3u(os.path.join(output_folder, safe_name), [main_item])
+                # 2. M3U Kaydet (Diziye özel)
+                m3u_path = os.path.join(output_folder, safe_filename)
+                create_single_m3u(m3u_path, [main_item])
                 
                 items_data.append(main_item)
 
         except Exception as e:
-            print(f"Hata oluştu ({item_name}): {e}")
+            print(f"Atlandı: {e}")
             continue
 
     return items_data
@@ -178,21 +202,12 @@ def main():
     # 2. Programları Tara
     program_data = process_category("Programlar", f"{BASE_URL}/programlar", DIRS["program"])
 
-    # 3. Genel Listeleri Oluştur (Show TV Klasörü içine)
-    
-    # Tüm Diziler Tek Dosyada
+    # 3. Genel Listeleri Oluştur (Ana Klasöre)
     if dizi_data:
-        print("\nGenel Dizi Listesi Oluşturuluyor...")
-        with open(f"{DIRS['root']}/showtv_diziler.json", "w", encoding="utf-8") as f:
-            json.dump(dizi_data, f, ensure_ascii=False, indent=4)
-        create_single_m3u(f"{DIRS['root']}/showtv_diziler", dizi_data)
-
-    # Tüm Programlar Tek Dosyada
+        create_general_m3u(f"{DIRS['root']}/showtv_diziler_genel", dizi_data, "Diziler")
+        
     if program_data:
-        print("Genel Program Listesi Oluşturuluyor...")
-        with open(f"{DIRS['root']}/showtv_programlar.json", "w", encoding="utf-8") as f:
-            json.dump(program_data, f, ensure_ascii=False, indent=4)
-        create_single_m3u(f"{DIRS['root']}/showtv_programlar", program_data)
+        create_general_m3u(f"{DIRS['root']}/showtv_programlar_genel", program_data, "Programlar")
 
     print("\nİşlem Tamamlandı.")
 
