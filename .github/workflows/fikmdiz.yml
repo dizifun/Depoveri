@@ -1,14 +1,14 @@
-name: Vidsrc Grabber
+name: Gelismis Vidsrc Grabber
 
 on:
-  workflow_dispatch: # Manuel çalıştırma butonu ekler
+  workflow_dispatch:
 
 jobs:
   scrape-job:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Kodları Çek (Checkout)
+      - name: Kodları Çek
         uses: actions/checkout@v3
 
       - name: Python Kurulumu
@@ -16,21 +16,22 @@ jobs:
         with:
           python-version: '3.10'
 
-      # İSTEDİĞİN KISIM BURASI:
-      # Kütüphaneleri ve tarayıcıları doğrudan burada kuruyoruz.
-      - name: Kütüphaneleri Yükle
+      - name: Gerekli Her Şeyi Yükle
         run: |
           python -m pip install --upgrade pip
-          pip install playwright
+          pip install playwright playwright-stealth
           playwright install chromium
           playwright install-deps
 
-      - name: Python Kodunu Çalıştır
+      - name: Scraper Başlat
         run: python main.py
 
-      - name: Sonucu İndir (Artifact)
+      - name: Sonuçları ve Ekran Görüntülerini İndir
         uses: actions/upload-artifact@v4
-        if: always() # Hata olsa bile çalışsın
+        if: always() # Hata olsa bile çalışsın ki ekran görüntüsünü görelim
         with:
-          name: m3u8-linkleri
-          path: sonuc.txt
+          name: sonuclar-ve-kanitlar
+          path: |
+            sonuc.txt
+            ekran_goruntusu.png
+            hata_goruntusu.png
