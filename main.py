@@ -1,70 +1,78 @@
 import asyncio
-import re
 from playwright.async_api import async_playwright
 
-# Hedef URL (Senin verdiğin örnek)
-# Not: ID dinamik olarak değiştirilebilir.
-BASE_URL = "https://vidsrc-embed.ru/embed/movie?imdb=tt18382850"
+# Hedef URL
+TARGET_URL = "https://vidsrc-embed.ru/embed/movie?imdb=tt18382850"
 
-async def get_stream_link():
+async def intercept_network():
     async with async_playwright() as p:
-        # Tarayıcıyı başlat (headless=True arka planda çalışır, False yaparsan tarayıcıyı görürsün)
+        # Tarayıcıyı başlat (headless=True arka planda çalışır)
         browser = await p.chromium.launch(headless=True)
         
-        # Mobil cihaz taklidi yapmak bazen daha temiz linkler verir
+        # Mobil görünümü taklit et (Bazen daha temiz link verir)
         context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            user_agent="Mozilla/5.0 (Linux; Android 10; SM-G960F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36"
         )
         page = await context.new_page()
 
-        print(f"Siteye gidiliyor: {BASE_URL}")
+        print(f"Siteye gidiliyor: {TARGET_URL}")
 
-        # M3U8 linklerini yakalamak için bir değişken
-        found_streams = []
+        # M3U8 linklerini burada toplayacağız
+        found_links = set()
 
-        # Ağ trafiğini dinle (Network Interception)
-        page.on("request", lambda request: check_request(request, found_streams))
+        # Ağ trafiğini dinleyen fonksiyon
+        def handle_request(request):
+            url = request.url
+            if ".m3u8" in url:
+                print(f"[BULUNDU] {url}")
+                found_links.add(url)
+
+        # Dinleyiciyi aktif et
+        page.on("request", handle_request)
 
         try:
-            # Sayfaya git ve yüklenmesini bekle
-            await page.goto(BASE_URL, timeout=60000)
+            # Siteye git
+            await page.goto(TARGET_URL, timeout=60000)
             
-            # Sayfa içinde videonun tetiklenmesi için tıklama gerekebilir
-            # Çoğu embed player'da "Play" butonuna basmak gerekir
-            # Burada iframe veya play butonunu bulup tıklatmayı deneyebiliriz:
-            try:
-                # Örnek: Play butonuna tıkla (Seçici siteye göre değişebilir)
-                await page.click("div#player", timeout=5000) 
-            except:
-                print("Otomatik oynatma veya play butonu bulunamadı, trafik dinleniyor...")
+            # Sayfanın tam yüklenmesi için bekle
+            await page.wait_for_timeout(5000)
 
-            # Videonun yüklenmesi ve m3u8 isteğinin ağa düşmesi için biraz bekle
-            await page.wait_for_timeout(10000) 
+            # Oynatıcıyı tetiklemek için ekrana tıklamayı dene
+            # Bu sitelerde genellikle bir "Play" overlay'i olur.
+            print("Oynatıcı tetikleniyor...")
+            
+            # Farklı seçicilerle tıklamayı dene (Garanti olsun diye)
+            clicked = False
+            for selector in ["#player", ".play-button", "video", "iframe", "body"]:
+                try:
+                    if await page.is_visible(selector):
+                        await page.click(selector, timeout=2000)
+                        clicked = True
+                        break
+                except:
+                    continue
+            
+            if not clicked:
+                # Rastgele bir yere tıkla (bazen işe yarar)
+                await page.mouse.click(100, 100)
+
+            # Video isteğinin ağa düşmesi için bekle
+            await page.wait_for_timeout(10000)
 
         except Exception as e:
-            print(f"Bir hata oluştu: {e}")
+            print(f"Hata oluştu: {e}")
+
+        await browser.close()
         
-        finally:
-            await browser.close()
-
-        return found_streams
-
-def check_request(request, streams_list):
-    # Eğer istek URL'si .m3u8 içeriyorsa listeye ekle
-    if ".m3u8" in request.url:
-        print(f"[YAKALANDI] {request.url}")
-        streams_list.append(request.url)
+        # Sonuçları dosyaya yaz (Artifact olarak almak için)
+        with open("sonuc.txt", "w") as f:
+            if found_links:
+                for link in found_links:
+                    f.write(link + "\n")
+                print(f"\nToplam {len(found_links)} link kaydedildi.")
+            else:
+                f.write("Link bulunamadi.")
+                print("\nMaalesef link yakalanamadı.")
 
 if __name__ == "__main__":
-    links = asyncio.run(get_stream_link())
-    
-    print("\n--- SONUÇLAR ---")
-    if links:
-        print("Bulunan M3U8 Linkleri:")
-        for link in links:
-            print(link)
-            # İstersen burada linki bir dosyaya kaydedebilirsin
-            with open("streams.txt", "a") as f:
-                f.write(f"{link}\n")
-    else:
-        print("M3U8 linki yakalanamadı. Site koruması tarayıcıyı algılamış olabilir.")
+    asyncio.run(intercept_network())
